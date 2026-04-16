@@ -1,0 +1,9 @@
+idf_component_register(
+    SRCS
+        "main.cpp"
+        "Map.cpp"
+        "../../WariatCommon/ComMap.cpp"
+    INCLUDE_DIRS
+        "."
+        "../../WariatCommon"
+)

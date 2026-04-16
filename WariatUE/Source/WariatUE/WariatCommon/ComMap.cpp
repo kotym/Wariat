@@ -1,0 +1,1 @@
+#include "../../../WariatCommon/ComMap.cpp"

@@ -1,0 +1,37 @@
+# Build artifacts
+build/
+*.elf
+*.hex
+*.bin
+*.map
+
+# CMake
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+.cmake/
+
+# IDE
+.vscode/
+
+# Object and library files
+*.o
+*.a
+*.so
+*.obj
+*.lib
+*.exe
+*.dll
+
+# Compiled Python
+*.pyc
+__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+
+old.git

@@ -1,0 +1,18 @@
+# Ignore everything in the repository
+/*
+
+# But keep this .gitignore file so rules are applied
+!.gitignore
+
+# Allow the Source directory so we can selectively unignore deeper folders
+!/Source/
+
+# Re-ignore everything directly under Source
+/Source/*
+
+# Unignore the specific folder and its contents to be tracked
+!/Source/WariatUE/
+!/Source/WariatUE/Wariat/
+!/Source/WariatUE/Wariat/**
+
+old.git
