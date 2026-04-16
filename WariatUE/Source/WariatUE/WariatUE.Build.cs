@@ -30,7 +30,7 @@ public class WariatUE : ModuleRules
 			"WariatUE/Variant_Offroad",
 			"WariatUE/Variant_TimeTrial",
 			"WariatUE/Variant_TimeTrial/UI",
-			Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../WariatCommon"))
+			//Path.GetFullPath(Path.Combine(ModuleDirectory, "../../../WariatCommon"))
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

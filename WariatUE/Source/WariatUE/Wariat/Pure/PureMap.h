@@ -1,8 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-#include "ComMap.hpp"
+#include "../../WariatCommon/ComMap.hpp"
 
 
 class WARIATUE_API PureMap : public ComMap

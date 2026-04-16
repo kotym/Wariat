@@ -1,27 +1,24 @@
 #include "hFramework.h"
+#include "WariatCommon/CommunicationProtocol.hpp"
 #include "src/ESPInterface.hpp"
-#include <stddef.h>
-#include <stdio.h>
 
-using namespace hFramework;
-
+// Example main loop in hMain
 void hMain()
 {
-	ESPInterface esp(hExt.serial);
-	esp.init(115200, Parity::None, StopBits::One);
-	Serial.init(460800, Parity::None, StopBits::One);
-	esp.sendLine("STM32 ready");
+    // Initialize UART for communication with ESP32
+    ESPInterface esp(hSerial2);
+    esp.init();
 
-	char rxBuf[64];
-	for (;;)
-	{
-		const int rx = esp.receiveAvailable(rxBuf, sizeof(rxBuf) - 1);
-		if (rx > 0)
-		{
-			rxBuf[rx] = '\0';
-			Serial.printf("ESP -> STM32: %s\r\n", rxBuf);
-		}
+    sys.delay(1000);
 
-		sys.delay(10);
-	}
+    // Example of sending an obstacle event
+    WariatCommon::ObstaclePayload obstacle = { .distance_mm = 4000 };
+    esp.sendEvent(WariatCommon::EventType::EVENT_OBSTACLE_DETECTED, obstacle);
+
+    for (;;)
+    {
+        // In a loop, listen for and process commands from ESP32
+        esp.receiveAndProcess();
+        sys.delay(10);
+    }
 }

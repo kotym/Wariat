@@ -7,7 +7,7 @@
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "WariatUE.h"
 #include "HC_SR04.h"
-#include "ComMath.hpp"
+#include "../WariatCommon/ComMath.hpp"
 
 // Sets default values
 AWariat::AWariat()

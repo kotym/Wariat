@@ -5,5 +5,5 @@
 class Map : public ComMap
 {
 public:
-	Map() = default;
+	Map();
 };
