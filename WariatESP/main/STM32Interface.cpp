@@ -125,6 +125,13 @@ bool STM32Interface::receiveAndProcess()
 	return true;
 }
 
+bool STM32Interface::consumeObstacleDetected()
+{
+	const bool wasDetected = obstacleDetected;
+	obstacleDetected = false;
+	return wasDetected;
+}
+
 void STM32Interface::handleEvent(EventType event, const uint8_t* payload, uint8_t payloadSize)
 {
 	// Application logic reacts to events from STM32 here
@@ -135,6 +142,7 @@ void STM32Interface::handleEvent(EventType event, const uint8_t* payload, uint8_
 			if (payloadSize == sizeof(ObstaclePayload))
 			{
 				const auto* obstacleData = reinterpret_cast<const ObstaclePayload*>(payload);
+				obstacleDetected = true;
 				ESP_LOGI(TAG, "Obstacle detected at %lu mm", obstacleData->distance_mm);
 				// Update map, plan new path, etc.
 			}

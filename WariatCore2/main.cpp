@@ -6,8 +6,10 @@
 void hMain()
 {
     // Initialize UART for communication with ESP32
-    ESPInterface esp(hSerial2);
+    ESPInterface esp(hExt.serial);
     esp.init();
+
+    
 
     sys.delay(1000);
 

@@ -24,6 +24,7 @@ public:
 
 	// --- Methods for receiving and parsing events ---
 	bool receiveAndProcess();
+	bool consumeObstacleDetected();
 
 private:
 	uart_port_t uart_num;
@@ -34,6 +35,8 @@ private:
 	bool sendFrame(uint8_t msgType);
 
 	void handleEvent(WariatCommon::EventType event, const uint8_t* payload, uint8_t payloadSize);
+
+	bool obstacleDetected = false;
 };
 
 // Template implementation must be in the header file
