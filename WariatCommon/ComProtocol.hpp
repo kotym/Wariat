@@ -62,18 +62,18 @@ namespace Payload
     
     struct MoveForward : public Payload
     {
-        MoveForward(int16_t _distanceCm) : distanceCm(_distanceCm) {}
+        MoveForward(float _distanceCm) : distanceCm(_distanceCm) {}
         PacketPayloadType GetPayloadType() { return PacketPayloadType::MoveForward; }
 
-        int16_t distanceCm = 0; //cm
+        float distanceCm = 0; //cm
     };
     
     struct Rotate : public Payload
     {
-        Rotate(int16_t _angle) : angle(_angle) {}
+        Rotate(float _angle) : angle(_angle) {}
         PacketPayloadType GetPayloadType() { return PacketPayloadType::Rotate; }
 
-        int16_t angle = 0; //rad
+        float angle = 0; //rad
     };
 }
 
