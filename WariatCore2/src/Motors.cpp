@@ -15,7 +15,7 @@ Motors::~Motors()
 
 }
 
-void Motors::MoveForeward(float distanceCm)
+void Motors::MoveForward(float distanceCm)
 {
     const float rotations = distanceCm / wheelCircumferenceCm;
     const int32_t encoderClicks = rotations * encoderClicksPerFullRotation;

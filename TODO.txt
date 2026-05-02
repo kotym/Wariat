@@ -1,0 +1,23 @@
+Mechanika:
+    1. zbudować robota ✅
+    2. zmierzyć robota ?✅?
+
+
+
+Soft:
+    1. Ujednolicić nazewnictwo
+    2. Kalibracja wszystkiego
+    3. Posprzątać, wywalić ai slop
+
+    Core2:
+        1. Napisać zarządzanie silnikami
+        2. Napisać zarządzanie hc-sr04
+
+    esp:
+        1. napisać stronę www
+            1. dodać sterowanie manualne
+            2. dodać log
+        2. napisać logikę robota
+        3. napisać nawigacje
+        4. napisać mapowanie ✅
+        5. poprawić kod mapowania

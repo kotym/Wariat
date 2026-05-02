@@ -109,8 +109,12 @@ inline void ComMap::UpdateCell(int32_t x, int32_t y, EMapCellState newState)
 	cellGroup = (cellGroup & ~mask) | ((uint8_t)cell << inBytePos);
 }
 
-void ComMap::UpdateMapFromScan(Vector2<int32_t> position, float rotation, float range, float coneAngle, bool wasHit, Vector2<int32_t> centerPosOffset)
+void ComMap::UpdateMapFromScan(Transform transform, float range, float coneAngle, bool wasHit, Vector2<int32_t> centerPosOffset /* TODO is this centerPosOffset necessary?? */)
 {
+	Vector2<int32_t> position = transform.position;
+	position /= cellSizeInCm;
+	range /= cellSizeInCm;
+	centerPosOffset /= cellSizeInCm;
 	constexpr float kPi = 3.14159265358979323846f;
 
 	lastScanOutlineCells.reserve(lastScanOutlineCells.size() + range * 0.6f);
@@ -122,8 +126,8 @@ void ComMap::UpdateMapFromScan(Vector2<int32_t> position, float rotation, float 
 	float innerRangeSq = innerRange * innerRange;
 
 	// Kąty ramion
-	float startAngleRad = rotation - (coneAngle / 2.0f);
-	float endAngleRad = rotation + (coneAngle / 2.0f);
+	float startAngleRad = transform.rotation - (coneAngle / 2.0f);
+	float endAngleRad = transform.rotation + (coneAngle / 2.0f);
 
 	float sinStart = std::sin(startAngleRad);
 	float cosStart = std::cos(startAngleRad);
@@ -163,7 +167,7 @@ void ComMap::UpdateMapFromScan(Vector2<int32_t> position, float rotation, float 
 	float cotStart = std::abs(sinStart) > EPSILON ? (cosStart / sinStart) : 0.0f;
 	float cotEnd = std::abs(sinEnd) > EPSILON ? (cosEnd / sinEnd) : 0.0f;
 	
-	auto IsCellInSector = [=, this](float x, float y, int cellIndex) -> EMapCellState {
+	auto IsCellInSector = [&](float x, float y, int cellIndex) -> EMapCellState {
 		// 1. Test promienia
 		const float distSq = x * x + y * y;
 		

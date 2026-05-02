@@ -28,11 +28,49 @@ union ByteOfCells{
 		EMapCellState cell3E : 2;
 	};
 	uint8_t byte;
+	EMapCellState Get(int8_t cellId)
+	{
+		switch (cellId)
+		{
+		case 0: return cell0E;
+		case 1: return cell1E;
+		case 2: return cell2E;
+		case 3: return cell3E;
+		default:
+			static_assert(true);
+			return EMapCellState::Invalid;
+		}
+	}
+	void Set(int8_t cellId, EMapCellState cellState)
+	{
+		switch (cellId)
+		{
+		case 0: cell0E = cellState; break;
+		case 1: cell1E = cellState; break;
+		case 2: cell2E = cellState; break;
+		case 3: cell3E = cellState; break;
+		default:
+			static_assert(true);
+		}
+	}
 };
 
+struct CellPtr{
+	ByteOfCells* byteOfCells = nullptr;
+	int8_t cellId = 0;
+	CellPtr(){}
+	CellPtr(ByteOfCells* _byteOfCells, int8_t _cellId) : byteOfCells(_byteOfCells), cellId(_cellId) {}
+	void Set(EMapCellState cellState){
+		byteOfCells->Set(cellId, cellState);
+	}
+	EMapCellState Get(){
+		return byteOfCells->Get(cellId);
+	}
+};
 
 class ComMap
 {
+	friend class ComNavi;
 public:
 	struct MemoryOps
 	{
@@ -46,7 +84,7 @@ public:
 	~ComMap();
 
 	void Reset();
-	void UpdateMapFromScan(Vector2<int32_t> position, float rotation, float range, float coneAngle, bool wasHit, Vector2<int32_t> centerPosOffset);
+	void UpdateMapFromScan(Transform transform, float range, float coneAngle, bool wasHit, Vector2<int32_t> centerPosOffset);
 
 	const uint8_t* GetMap() const { return map; }
 	int32_t GetMapWidthInCells() const { return mapWidthInCells; }
@@ -58,6 +96,28 @@ public:
 	const std::vector<int>& GetLastScanOutlineCells() const { return lastScanOutlineCells; }
 
 	void ResetOutline();
+
+	inline EMapCellState GetCellState(Vector2<int32_t> pos) const {
+		pos += mapWidthInCells /2;
+		if (map == nullptr || pos.x > mapWidthInCells || pos.x < 0 || pos.y > mapWidthInCells || pos.y < 0) 
+			return EMapCellState::Invalid;
+		int32_t bytePos = pos.x / cellsInByte + pos.y * mapWidthInBytes;
+		int32_t inBytePos = (cellsInByte - pos.x % cellsInByte - 1) * 8 / cellsInByte;
+		uint8_t& cellGroup = map[bytePos];
+		EMapCellState cell = (EMapCellState)(cellGroup >> inBytePos & 0b11);
+		return cell;
+	}
+
+	inline CellPtr GetCell(Vector2<int32_t> pos) {
+		pos += mapWidthInCells /2;
+		if (map == nullptr || pos.x > mapWidthInCells || pos.x < 0 || pos.y > mapWidthInCells || pos.y < 0) 
+			return CellPtr();
+		int32_t bytePos = pos.x / cellsInByte + pos.y * mapWidthInBytes;
+		int32_t inBytePos = (cellsInByte - pos.x % cellsInByte - 1) * 4 / cellsInByte;
+		uint8_t& cellGroup = map[bytePos];
+		//EMapCellState cell = (EMapCellState)(cellGroup >> inBytePos & 0b11);
+		return CellPtr((ByteOfCells*)&cellGroup, inBytePos);
+	}
 
 protected:
 	inline void UpdateCell(int32_t x, int32_t y, EMapCellState newState);
