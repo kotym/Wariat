@@ -11,10 +11,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(WARIAT_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/..")
 set(WARIAT_COMMON_PATH "${WARIAT_REPO_ROOT}/WariatCommon")
 
-if(NOT EXISTS "${WARIAT_COMMON_PATH}/CommunicationProtocol.hpp")
-	message(FATAL_ERROR "WariatCommon not found at: ${WARIAT_COMMON_PATH}")
-endif()
-
 file(GLOB WARIAT_COMMON_SOURCES CONFIGURE_DEPENDS "${WARIAT_COMMON_PATH}/*.cpp")
 
 include(${HFRAMEWORK_PATH}/hFramework.cmake)
@@ -28,7 +24,6 @@ include_directories(
 
 add_hexecutable(WariatCore2
 	main.cpp
-	#src/ESPInterface.cpp
 	src/Motors.cpp
 	${WARIAT_COMMON_SOURCES}
 )

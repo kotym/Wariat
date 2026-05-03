@@ -2,11 +2,8 @@ idf_component_register(
     SRCS
         "main.cpp"
         "Map.cpp"
-        #"STM32Interface.cpp"
         "uart.cpp"
         "../../WariatCommon/ComMap.cpp"
-        #"../../WariatCommon/EventDispatcher.cpp"
-        "../../WariatCommon/ComProtocol.cpp"
         "../../WariatCommon/ComNavi.cpp"
     INCLUDE_DIRS
         "."
