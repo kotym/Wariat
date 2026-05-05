@@ -3,7 +3,7 @@
 #include "Components/Image.h"
 #include "RHICommandList.h"
 #include "Rendering/Texture2DResource.h"
-#include "Wariat.h"
+#include "UEWariat.h"
 
 void UWariatUI::NativeOnInitialized()
 {
@@ -11,6 +11,14 @@ void UWariatUI::NativeOnInitialized()
 	InitializeMapTexture();
 	if (MapImage != nullptr)
 		MapImage->SetBrushFromTexture(MapTexture);
+
+	AUEWariat* const Wariat = Cast<AUEWariat>(GetOwningPlayerPawn());
+	if (Wariat == nullptr)
+		return;
+	Wariat->pureWariat.mapRenderer.wariatUI = this;
+	mapRenderer = &Wariat->pureWariat.mapRenderer;
+	MapTextureWidth = mapRenderer->renderedMapSize.x;
+	MapTextureHeight = mapRenderer->renderedMapSize.y;
 }
 
 void UWariatUI::NativeDestruct()
@@ -51,27 +59,7 @@ void UWariatUI::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (0)
-	{
-		static FVector Color;
-
-		float a = 1, b = 1, c = 1;
-		Color.X += InDeltaTime * 0.5 * a;
-		Color.Y += InDeltaTime * 1 * b;
-		Color.Z += InDeltaTime * 1.5 * c;
-
-		if (Color.X > 255 || Color.X < 0) a = -a;
-		if (Color.Y > 255 || Color.Y < 0) b = -b;
-		if (Color.Z > 255 || Color.Z < 0) c = -c;
-
-		FillTexture(FLinearColor(Color));
-		UpdateTexture();
-	}
-	else
-	{
-		UpdateMapFromScan();
-		UpdateTexture();
-	}
+	UpdateTexture();
 }
 
 void UWariatUI::UpdateTexture(bool bFreeData)
@@ -144,100 +132,28 @@ void UWariatUI::FillTexture(FLinearColor Color)
 	}
 }
 
-void UWariatUI::UpdateMapFromScan()
+
+void UWariatUI::SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor cellColor)
 {
-	AWariat* const Wariat = Cast<AWariat>(GetOwningPlayerPawn());
-	if (Wariat == nullptr || MapTextureData == nullptr || MapTexture == nullptr) 
-		return;
-	const PureMap& pureMap = Wariat->GetPureMap();
-	const ByteOfCells* const map = (const ByteOfCells*)pureMap.GetMap();
-	if (map == nullptr) return;
-	int32 mapWidthInCells = pureMap.GetMapWidthInCells();
-	int32 mapWidthInBytes = pureMap.GetMapWidthInBytes();
-	int32 mapCellsInByte = pureMap.GetCellsInByte();
-	int32 mapByteSize = mapWidthInBytes * mapWidthInBytes;
-
-	float Rotation = FMath::DegreesToRadians(Wariat->GetActorRotation().Yaw);
-	//FVector2D Forward(FMath::Cos(Rotation), FMath::Sin(Rotation));
-	//FVector2D DetectionVector = Forward * Dist;
-	//FVector2D ScaledDetectionVector = DetectionVector / 5;
-	//FIntVector2 MapVector(ScaledDetectionVector.X, ScaledDetectionVector.Y);
-	FVector2D Pos(FVector2D(Wariat->GetActorLocation()) - Wariat->GetZeroLocation());
-	Pos /= pureMap.GetCellSizeInCm();
-	FIntVector2 WariatPosOnMap(Pos.X, Pos.Y);
-
-	int32 MapTextureHeightHalf = MapTextureHeight / 2;
-	int32 MapTextureWidthHalf = MapTextureWidth / 2;
-
-	for (int32 y = -MapTextureHeightHalf; y < MapTextureHeightHalf; y++)
+	static const FLinearColor Pink(1.f, 0.f, 0.5f, 1.f);
+	const FLinearColor* Color = nullptr;
+	switch (cellColor)
 	{
-		int32 mapY = Pos.Y + y;
-		mapY += mapWidthInCells / 2;
-		for (int32 x = -MapTextureWidthHalf; x < MapTextureWidthHalf; ++x)
-		{
-			int32 mapX = Pos.X + x;
-			mapX += mapWidthInCells / 2;
-			int32 TexturePixelIndex = (y + MapTextureHeightHalf)* MapTextureWidth + x + MapTextureWidthHalf;
-			if (mapY < 0 || mapY >= mapWidthInCells || mapX < 0 || mapX >= mapWidthInCells)
-			{
-				MapTextureData[TexturePixelIndex] = FLinearColor::Black;
-				continue;
-			}
-
-			int32 bytePos = mapX / mapCellsInByte + mapY * mapWidthInBytes;
-
-			ByteOfCells byteOfCells = map[bytePos];
-			int32 inBytePos = (mapCellsInByte - mapX % mapCellsInByte - 1) * 8 / mapCellsInByte;
-			EMapCellState cell = (EMapCellState)(byteOfCells.byte >> inBytePos & 0b11);
-
-			static const FLinearColor Pink(1.f, 0.f, 0.5f, 1.f);
-			const FLinearColor* Color = nullptr;
-			switch (cell)
-			{
-				case EMapCellState::Unknown:
-					Color = &CellColorUnknown;
-					break;
-				case EMapCellState::Empty:
-					Color = &CellColorEmpty;
-					break;
-				case EMapCellState::Wall:
-					Color = &CellColorFull;
-					break;
-				case EMapCellState::Idk:
-					Color = &CellColorRatherFull;
-					break;
-				default:
-					Color = &Pink;
-			}
-
-			MapTextureData[TexturePixelIndex] = *Color;
-		}
+		case WariatCommon::CellColor::Unknown:
+			Color = &CellColorUnknown;
+			break;
+		case WariatCommon::CellColor::Empty:
+			Color = &CellColorEmpty;
+			break;
+		case WariatCommon::CellColor::Wall:
+			Color = &CellColorFull;
+			break;
+		case WariatCommon::CellColor::Idk:
+			Color = &CellColorRatherFull;
+			break;
+		default:
+			Color = &Pink;
 	}
 
-	int32 PlayerCircleRadius = 8;
-	for (int32 y = -PlayerCircleRadius; y < PlayerCircleRadius; y++)
-	{
-		for (int32 x = -MapTextureWidthHalf; x < MapTextureWidthHalf; ++x)
-		{
-			if (x * x + y * y <= PlayerCircleRadius * PlayerCircleRadius)
-			{
-				int32 TexturePixelIndex = (y + MapTextureHeightHalf) * MapTextureWidth + x + MapTextureWidthHalf;
-				MapTextureData[TexturePixelIndex] = CellColorPlayerOutline;
-			}
-		}
-	}
-
-	const std::vector<int>& lastScanOutlineCells = pureMap.GetLastScanOutlineCells();
-
-	// Outline start point should be calculated from the HC_SR04 location not players
-
-	for (int Cell : lastScanOutlineCells)
-	{
-		int32 CellY = Cell / mapWidthInCells;
-		int32 CellX = Cell - CellY * mapWidthInCells;
-		int32 TextureY = CellY;
-		int32 TextureX = CellX;
-		int32 TexturePixelIndex = (TextureY + MapTextureHeightHalf) * MapTextureWidth + TextureX + MapTextureWidthHalf;
-		MapTextureData[TexturePixelIndex] = CellColorScanOutline;
-	}
+	MapTextureData[cellIndex] = *Color;
 }

@@ -15,4 +15,6 @@
 !/Source/WariatUE/Wariat/
 !/Source/WariatUE/Wariat/**
 
-old.git
+# Ignore inner WariatCommon that is a copy of oryginal WariatCommon
+/Source/WariatUE/WariatCommon/
+/Source/WariatUE/WariatCommon/**

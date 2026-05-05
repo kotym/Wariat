@@ -5,7 +5,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "WariatUI.h"
 #include "WariatUE.h"
-#include "Wariat.h"
+#include "UEWariat.h"
 
 
 void AWariatPlayerController::BeginPlay()
@@ -56,7 +56,7 @@ void AWariatPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 
 	// get a pointer to the controlled pawn
-	//WariatPawn = CastChecked<AWariat>(InPawn);
+	//WariatPawn = CastChecked<AUEWariat>(InPawn);
 
 	// subscribe to the pawn's OnDestroyed delegate
 	//VehiclePawn->OnDestroyed.AddDynamic(this, &AWariatUEPlayerController::OnPawnDestroyed);

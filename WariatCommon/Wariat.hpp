@@ -102,7 +102,7 @@ public:
             map.ResetOutline();
         Transform sensorTransform;
         GetHcSr04RelativePos(sensorTransform, hcSr04Reading.id);
-        map.UpdateMapFromScan(sensorTransform, hcSr04Reading.distance - 1, 30, true, sensorTransform.position - transform.position);
+        map.UpdateMapFromScan(sensorTransform, hcSr04Reading.distance - 1, 0.5235987755f /* 30 deg in rad */, true, sensorTransform.position - transform.position);
     }
 
 };

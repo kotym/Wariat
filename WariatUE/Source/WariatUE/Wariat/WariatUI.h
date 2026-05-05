@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "../WariatCommon/MapRenderer.hpp"
+
 #include "WariatUI.generated.h"
 
 class UImage;
@@ -79,6 +81,26 @@ protected:
 
 	void FillTexture(FLinearColor Color);
 
-	void UpdateMapFromScan();
+public:
 
+	// MapRenderer
+
+	void SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor cellColor);
+
+	class UEMapRenderer* mapRenderer = nullptr;
+};
+
+
+class UEMapRenderer : public WariatCommon::MapRenderer<UEMapRenderer>
+{
+	friend UWariatUI;
+public:
+	void SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor cellColor)
+	{
+		wariatUI->SetRenderedMapCell(cellIndex, cellColor);
+	}
+
+private:
+
+	UWariatUI* wariatUI = nullptr;
 };

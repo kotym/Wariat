@@ -1,5 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#include "Wariat/Wariat.h"
+#include "Wariat/UEWariat.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
@@ -10,8 +10,7 @@
 #include "../WariatCommon/ComMath.hpp"
 
 // Sets default values
-AWariat::AWariat()
-	: pureWariat(this)
+AUEWariat::AUEWariat()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -39,7 +38,7 @@ AWariat::AWariat()
 }
 
 // Called when the game starts or when spawned
-void AWariat::BeginPlay()
+void AUEWariat::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -48,7 +47,7 @@ void AWariat::BeginPlay()
 	ResetWariat();
 }
 
-void AWariat::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void AUEWariat::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
@@ -56,27 +55,32 @@ void AWariat::EndPlay(const EEndPlayReason::Type EndPlayReason)
 }
 
 // Called every frame
-void AWariat::Tick(float DeltaTime)
+void AUEWariat::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	//mind.update();
 	CheckHC_SR04();
 
+	FVector2D pos(FVector2D(GetActorLocation()) - ZeroLocation);
+	pureWariat.transform.position = { (float)pos.X, (float)pos.Y };
+	pureWariat.transform.rotation = FMath::DegreesToRadians(GetActorRotation().Yaw - ZeroRotation);
+	pureWariat.Update();
 }
 
 // Called to bind functionality to input
-void AWariat::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AUEWariat::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		// steering 
-		EnhancedInputComponent->BindAction(MoveIA, ETriggerEvent::Triggered, this, &AWariat::Move);
-		EnhancedInputComponent->BindAction(MoveIA, ETriggerEvent::Completed, this, &AWariat::Move);
+		EnhancedInputComponent->BindAction(MoveIA, ETriggerEvent::Triggered, this, &AUEWariat::Move);
+		EnhancedInputComponent->BindAction(MoveIA, ETriggerEvent::Completed, this, &AUEWariat::Move);
 
 		// look around
-		EnhancedInputComponent->BindAction(LookAroundIA, ETriggerEvent::Triggered, this, &AWariat::LookAround);
-		EnhancedInputComponent->BindAction(ResetIA, ETriggerEvent::Completed, this, &AWariat::ResetWariat);
+		EnhancedInputComponent->BindAction(LookAroundIA, ETriggerEvent::Triggered, this, &AUEWariat::LookAround);
+		EnhancedInputComponent->BindAction(ResetIA, ETriggerEvent::Completed, this, &AUEWariat::ResetWariat);
 	}
 	else
 	{
@@ -84,7 +88,7 @@ void AWariat::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 }
 
-void AWariat::Move(const FInputActionValue& Value)
+void AUEWariat::Move(const FInputActionValue& Value)
 {
 	const FVector2D& Input = Value.Get<FInputActionValue::Axis2D>();
 	if (Input.Y >= 0) {
@@ -99,7 +103,7 @@ void AWariat::Move(const FInputActionValue& Value)
 	ChaosVehicleMovement->SetSteeringInput(Input.X);
 }
 
-void AWariat::LookAround(const FInputActionValue& Value)
+void AUEWariat::LookAround(const FInputActionValue& Value)
 {
 	const FVector2D& Input = Value.Get<FVector2D>();
 
@@ -107,58 +111,33 @@ void AWariat::LookAround(const FInputActionValue& Value)
 	AddControllerPitchInput(Input.Y);
 }
 
-void AWariat::GetHC_SR04RelativePos(FVector2D& Pos, float& Rotation, int Id)
+void AUEWariat::ResetWariat()
 {
-	const float WariatRot = GetActorRotation().Yaw - ZeroRotation + 360.f;
-	const float WariatRotRad = FMath::DegreesToRadians(FMath::Modulo(WariatRot, 360.f));
-	Rotation = FMath::DegreesToRadians(FMath::Modulo(WariatRot + HC_SR04OffsetRotation[Id] + 360.f, 360.f));
-	Pos = FVector2D(GetActorLocation()) - ZeroLocation;
-	const float Cos = cosf(WariatRotRad), Sin = sinf(WariatRotRad);
-	Pos.X += HC_SR04OffsetLocation[Id].X * Cos - HC_SR04OffsetLocation[Id].Y * Sin;
-	Pos.Y += HC_SR04OffsetLocation[Id].X * Sin + HC_SR04OffsetLocation[Id].Y * Cos;
-}
-
-void AWariat::ResetWariat()
-{
-	pureMap.Reset();
+	pureWariat.map.Reset();
 	ZeroLocation = FVector2D(GetActorLocation());
 	ZeroRotation = 0;// GetActorRotation().Yaw;
-	HC_SR04OffsetLocation.Empty(HC_SR04s.Num());
-	HC_SR04OffsetRotation.Empty(HC_SR04s.Num());
+	int i = 0;
 	for (UHC_SR04* HC_SR04 : HC_SR04s)
 	{
 		if (HC_SR04 == nullptr) continue;
-		HC_SR04OffsetLocation.Add(FVector2D(HC_SR04->GetRelativeLocation()));
-		HC_SR04OffsetRotation.Add(HC_SR04->GetRelativeRotation().Yaw);
+		FVector2D pos(HC_SR04->GetRelativeLocation());
+		pureWariat.hcSr04Offsets[i].position = { (float)pos.X, (float)pos.Y };
+		pureWariat.hcSr04Offsets[i].rotation = FMath::DegreesToRadians(HC_SR04->GetRelativeRotation().Yaw);
+		++i;
 	}
 }
 
-void AWariat::CheckHC_SR04()
+void AUEWariat::CheckHC_SR04()
 {
-	pureMap.ResetOutline();
-	
-	FVector2D posCenter(FVector2D(GetActorLocation()) - ZeroLocation);
-	posCenter /= pureMap.GetCellSizeInCm();
-	Vector2<int32_t> posCenerInt(posCenter.X, posCenter.Y);
 	int i = 0;
 	for (UHC_SR04* HC_SR04 : HC_SR04s)
 	{
 		if (HC_SR04 == nullptr) continue;
 		HC_SR04->SphereConeTrace();
 		float Dist = HC_SR04->GetLastDetectionDist();
-		float Rotation;
-		
-		FVector2D pos;
-		GetHC_SR04RelativePos(pos, Rotation, i++);
-		pos /= pureMap.GetCellSizeInCm();
-		Dist /= pureMap.GetCellSizeInCm();
-		Vector2<int32_t> MapVector(pos.X, pos.Y);
 
-		pureMap.UpdateMapFromScan(MapVector, Rotation, Dist - 1, HC_SR04->GetDetectionAngleRad(), HC_SR04->WasLastDetectionHit(), MapVector - posCenerInt);
-	
-		FVector p = HC_SR04->GetComponentLocation();
-		FVector s1(pos.X * pureMap.GetCellSizeInCm() + ZeroLocation.X, pos.Y * pureMap.GetCellSizeInCm() + ZeroLocation.Y, p.Z);
-		DrawDebugDirectionalArrow(GetWorld(), s1, s1 + FRotator(0, FMath::RadiansToDegrees(Rotation), 0).Vector() * 50, 10, FColor::Magenta, false, 0, 250, 1);
+		WariatCommon::Payload::HcSr04Reading reading(i++, Dist);
+		pureWariat.ProcessEvent(WariatCommon::PacketPayloadType::HcSr04Reading, &reading);
 	}
 }
 

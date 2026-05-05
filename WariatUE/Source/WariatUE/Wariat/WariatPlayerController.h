@@ -7,7 +7,7 @@
 #include "WariatPlayerController.generated.h"
 
 class UInputMappingContext;
-class AWariat;
+class AUEWariat;
 class UWariatUI;
 
 UCLASS()
@@ -20,10 +20,10 @@ class WARIATUE_API AWariatPlayerController : public APlayerController
 
 	/** Type of vehicle to automatically respawn when it's destroyed */
 	//UPROPERTY(EditAnywhere, Category = "Vehicle|Respawn")
-	//TSubclassOf<AWariat> VehiclePawnClass;
+	//TSubclassOf<AUEWariat> VehiclePawnClass;
 
 	/** Pointer to the controlled vehicle pawn */
-	TObjectPtr<AWariat> WariatPawn;
+	TObjectPtr<AUEWariat> WariatPawn;
 
 	/** Type of the UI to spawn */
 	UPROPERTY(EditAnywhere, Category = "Vehicle|UI")

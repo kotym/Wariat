@@ -1,15 +1,7 @@
 #include "Wariat/Pure/PureWariat.h"
-#include "Wariat/Wariat.h"
+#include "Wariat/UEWariat.h"
 
-PureWariat::PureWariat(AWariat* wariatPtr)
-	: wariat(wariatPtr)
-{
-}
 
 PureWariat::~PureWariat()
-{
-}
-
-void PureWariat::Update()
 {
 }

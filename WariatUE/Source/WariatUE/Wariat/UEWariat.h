@@ -5,8 +5,7 @@
 #include "CoreMinimal.h"
 #include "WheeledVehiclePawn.h"
 #include "Pure/PureWariat.h"
-#include "Pure/PureMap.h"
-#include "Wariat.generated.h"
+#include "UEWariat.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -18,10 +17,11 @@ class UHC_SR04;
 
 
 UCLASS()
-class WARIATUE_API AWariat : public AWheeledVehiclePawn
+class WARIATUE_API AUEWariat : public AWheeledVehiclePawn
 {
 	GENERATED_BODY()
 
+	friend class UWariatUI;
 
 	/** Spring Arm for the back camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -48,22 +48,33 @@ class WARIATUE_API AWariat : public AWheeledVehiclePawn
 
 	TObjectPtr<UChaosWheeledVehicleMovementComponent> ChaosVehicleMovement;
 
+	//////////////////////////////////////////////////////////
+
+	// ESP part ////////////////////////////////////////
+
 	PureWariat pureWariat;
-	PureMap pureMap;
+
+	// ESP helpers /////////////////////////////////////////
 
 	FVector2D ZeroLocation;
 	float ZeroRotation;
 
-	TArray<FVector2D> HC_SR04OffsetLocation;
-	TArray<float> HC_SR04OffsetRotation;
+	// CORE2 part ///////////////////////////////////////////
+
+
+	// CORE2 helpers //////////////////////////////////////////
+
+
+	// other Wariat helpers /////////////////////////////////////
+
+	/////////////////////////////////////////////////////////////////////
 
 public:
 	// Sets default values for this pawn's properties
-	AWariat();
-	PureMap& GetPureMap() { return pureMap; }
+	AUEWariat();
+	PureMap& GetPureMap() { return pureWariat.map; }
 	FVector2D GetZeroLocation() const { return ZeroLocation; }
 	//const FVector2D* GetHC_SR04Offset() const { return HC_SR04OffsetLocation; }
-	void GetHC_SR04RelativePos(FVector2D& Pos, float& Rotation, int Id);
 
 protected:
 	// Called when the game starts or when spawned
