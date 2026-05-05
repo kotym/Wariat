@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WheeledVehiclePawn.h"
+#include "GameFramework/Pawn.h"
 #include "Pure/PureWariat.h"
 #include "UEWariat.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
-class UChaosWheeledVehicleMovementComponent;
 class UInputAction;
 struct FInputActionValue;
 
@@ -17,11 +16,15 @@ class UHC_SR04;
 
 
 UCLASS()
-class WARIATUE_API AUEWariat : public AWheeledVehiclePawn
+class WARIATUE_API AUEWariat : public APawn
 {
 	GENERATED_BODY()
 
 	friend class UWariatUI;
+
+	/**  The main skeletal mesh */
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class USkeletalMeshComponent> Mesh;
 
 	/** Spring Arm for the back camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -46,7 +49,14 @@ class WARIATUE_API AUEWariat : public AWheeledVehiclePawn
 	UPROPERTY(VisibleAnywhere)
 	TArray<TObjectPtr<UHC_SR04>> HC_SR04s;
 
-	TObjectPtr<UChaosWheeledVehicleMovementComponent> ChaosVehicleMovement;
+ 	FVector2D ManualInput = FVector2D::ZeroVector;
+	bool bManualInputActive = false;
+	bool bDrivingDistance = false;
+	bool bTurning = false;
+	float RemainingDistance = 0.0f;
+	float RemainingYaw = 0.0f;
+	float CommandSpeed = 0.0f;
+	float CommandTurnRate = 0.0f;
 
 	//////////////////////////////////////////////////////////
 
@@ -72,6 +82,24 @@ class WARIATUE_API AUEWariat : public AWheeledVehiclePawn
 public:
 	// Sets default values for this pawn's properties
 	AUEWariat();
+
+	UFUNCTION(BlueprintCallable, Category = "Kinematic")
+	void DriveDistance(float DistanceCm, float SpeedCmPerSec);
+
+	UFUNCTION(BlueprintCallable, Category = "Kinematic")
+	void DriveSpeed(float SpeedCmPerSec);
+
+	UFUNCTION(BlueprintCallable, Category = "Kinematic")
+	void TurnDegrees(float Degrees, float TurnRateDegPerSec);
+
+	UFUNCTION(BlueprintCallable, Category = "Kinematic")
+	void StopKinematic();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Kinematic")
+	float MaxSpeedCmPerSec = 400.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Kinematic")
+	float MaxTurnRateDegPerSec = 200.0f;
 	PureMap& GetPureMap() { return pureWariat.map; }
 	FVector2D GetZeroLocation() const { return ZeroLocation; }
 	//const FVector2D* GetHC_SR04Offset() const { return HC_SR04OffsetLocation; }
@@ -92,4 +120,5 @@ protected:
 	void LookAround(const FInputActionValue& Value);
 	void ResetWariat();
 	void CheckHC_SR04();
+	void UpdateKinematic(float DeltaTime);
 };
