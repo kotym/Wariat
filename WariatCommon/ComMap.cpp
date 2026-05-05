@@ -77,36 +77,17 @@ void ComMap::ResetOutline()
 
 inline void ComMap::UpdateCell(int32_t x, int32_t y, EMapCellState newState)
 {
-	x += mapWidthInCells / 2;
-	y += mapWidthInCells / 2;
-	if (map == nullptr || x > mapWidthInCells || x < 0 || y > mapWidthInCells || y < 0 || newState == EMapCellState::Invalid) return;
-	int32_t bytePos = x / cellsInByte + y * mapWidthInBytes;
-	int32_t inBytePos = (cellsInByte - x % cellsInByte - 1) * 8 / cellsInByte;
-	uint8_t& cellGroup = map[bytePos];
-	EMapCellState cell = (EMapCellState)(cellGroup >> inBytePos & 0b11);
+	CellPtr cell = GetCell({ x,y });
 
-	//if (newState == EMapCellState::Outline)
-	//{
-	//	newState = EMapCellState::Empty;
-	//	lastScanOutlineCells.push_back()
-	//}
-
-	switch (cell)
+	switch (cell.Get())
 	{
 		case EMapCellState::Wall:
 		case EMapCellState::Unknown:
-			cell = newState;
+			cell.Set(newState);
 			break;
 		default:
 			return;
 	}
-
-	// Safety may be turned off in produciton
-	cell = (EMapCellState)((uint8_t)cell & 0b11);
-	//if ()
-
-	uint8_t mask = 0b11 << inBytePos;
-	cellGroup = (cellGroup & ~mask) | ((uint8_t)cell << inBytePos);
 }
 
 void ComMap::UpdateMapFromScan(Transform transform, float range, float coneAngle, bool wasHit, Vector2<int32_t> centerPosOffset /* TODO is this centerPosOffset necessary?? */)

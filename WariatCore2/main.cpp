@@ -14,6 +14,7 @@ void hMain()
     Motors::Init();
     COREInterface::Init(hExt.serial);
     
+    COREInterface::Get().ReceiveCommands();
     
 
     //sys.delay(1000);

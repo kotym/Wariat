@@ -60,10 +60,10 @@ struct CellPtr{
 	int8_t cellId = 0;
 	CellPtr(){}
 	CellPtr(ByteOfCells* _byteOfCells, int8_t _cellId) : byteOfCells(_byteOfCells), cellId(_cellId) {}
-	void Set(EMapCellState cellState){
+	inline void Set(EMapCellState cellState){
 		byteOfCells->Set(cellId, cellState);
 	}
-	EMapCellState Get(){
+	inline EMapCellState Get(){
 		return byteOfCells->Get(cellId);
 	}
 };
@@ -115,7 +115,6 @@ public:
 		int32_t bytePos = pos.x / cellsInByte + pos.y * mapWidthInBytes;
 		int32_t inBytePos = (cellsInByte - pos.x % cellsInByte - 1) * 4 / cellsInByte;
 		uint8_t& cellGroup = map[bytePos];
-		//EMapCellState cell = (EMapCellState)(cellGroup >> inBytePos & 0b11);
 		return CellPtr((ByteOfCells*)&cellGroup, inBytePos);
 	}
 

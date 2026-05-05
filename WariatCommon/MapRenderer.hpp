@@ -49,40 +49,23 @@ public:
 
     void RenderMap(Transform transform, ComMap& map)
     {
-        const ByteOfCells* const byteMap = (const ByteOfCells*)map.GetMap();
-        if (byteMap == nullptr) return;
         int32_t mapWidthInCells = map.GetMapWidthInCells();
-        int32_t mapWidthInBytes = map.GetMapWidthInBytes();
-        int32_t mapCellsInByte = map.GetCellsInByte();
-        int32_t mapByteSize = mapWidthInBytes * mapWidthInBytes;
 
-        //FVector2D Forward(FMath::Cos(Rotation), FMath::Sin(Rotation));
-        //FVector2D DetectionVector = Forward * Dist;
-        //FVector2D ScaledDetectionVector = DetectionVector / 5;
-        //FIntVector2 MapVector(ScaledDetectionVector.X, ScaledDetectionVector.Y);
         transform.position /= map.GetCellSizeInCm();
         Vector2<int32_t> WariatPosOnMap(transform.position);
-        
-        for (int32_t y = -renderedMapHalfSize.y; y < renderedMapHalfSize.y; y++)
+        Vector2<int32_t> renderedCell;
+        for (renderedCell.y = -renderedMapHalfSize.y; renderedCell.y < renderedMapHalfSize.y; ++renderedCell.y)
         {
-            int32_t mapY = WariatPosOnMap.y + y;
-            mapY += mapWidthInCells / 2;
-            for (int32_t x = -renderedMapHalfSize.x; x < renderedMapHalfSize.x; ++x)
+            for (renderedCell.x = -renderedMapHalfSize.x; renderedCell.x < renderedMapHalfSize.x; ++renderedCell.x)
             {
-                int32_t mapX = WariatPosOnMap.x + x;
-                mapX += mapWidthInCells / 2;
-                int32_t TexturePixelIndex = (y + renderedMapHalfSize.y) * renderedMapSize.x + x + renderedMapHalfSize.x;
-                if (mapY < 0 || mapY >= mapWidthInCells || mapX < 0 || mapX >= mapWidthInCells)
+                int32_t TexturePixelIndex = (renderedCell.y + renderedMapHalfSize.y) * renderedMapSize.x + renderedCell.x + renderedMapHalfSize.x;
+                EMapCellState cell = map.GetCellState(WariatPosOnMap + renderedCell);
+
+                if (cell == EMapCellState::Invalid)
                 {
                     SetRenderedMapCell(TexturePixelIndex, CellColor::OutOfBounds);
                     continue;
                 }
-
-                int32_t bytePos = mapX / mapCellsInByte + mapY * mapWidthInBytes;
-
-                ByteOfCells byteOfCells = byteMap[bytePos];
-                int32_t inBytePos = (mapCellsInByte - mapX % mapCellsInByte - 1) * 8 / mapCellsInByte;
-                EMapCellState cell = (EMapCellState)(byteOfCells.byte >> inBytePos & 0b11);
 
                 SetRenderedMapCell(TexturePixelIndex, MapCellStateToCellColor(cell));
             }

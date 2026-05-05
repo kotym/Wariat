@@ -151,6 +151,12 @@ void UWariatUI::SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor c
 		case WariatCommon::CellColor::Idk:
 			Color = &CellColorRatherFull;
 			break;
+		case WariatCommon::CellColor::Wariat:
+			Color = &CellColorPlayerOutline;
+			break;
+		case WariatCommon::CellColor::VisionCone:
+			Color = &CellColorScanOutline;
+			break;
 		default:
 			Color = &Pink;
 	}

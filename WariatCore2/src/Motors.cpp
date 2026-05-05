@@ -30,3 +30,9 @@ void Motors::Rotate(float angleRad)
     hMot1.rotRel(-encoderClicks, 300);
     hMot2.rotRel(encoderClicks, 300);
 }
+
+void Motors::Stop()
+{
+    hMot1.stop();
+    hMot2.stop();
+}
