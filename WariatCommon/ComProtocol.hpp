@@ -4,20 +4,20 @@
 namespace WariatCommon
 {
 
-enum class PacketPayloadType
+enum class PacketPayloadType : uint8_t
 {
     None = 0,
     HcSr04Reading,
     Stop,
     OdometryReading,
     MoveForward,
-    Rotate
-
+    Rotate,
+    BlinkToggle
 };
 
 inline uint8_t CalcCheckSum(PacketPayloadType payloadType, uint8_t* data, uint8_t size)
 {
-    uint8_t* dataEnd = data + size;
+    const uint8_t* dataEnd = data + size;
     uint8_t checkSum = (uint8_t)payloadType;
     for (; data < dataEnd; ++data)
     {
@@ -26,14 +26,16 @@ inline uint8_t CalcCheckSum(PacketPayloadType payloadType, uint8_t* data, uint8_
     return checkSum;
 }
 
+#pragma pack(push, 1)
+
 template <class T>
 struct Packet
 {
-    Packet(T& _payload) : payload(_payload), payloadType(payload.GetPayloadType()) {}
-    Packet(PacketPayloadType _payloadType, T& _payload) : payloadType(_payloadType), payload(_payload) {}
+    Packet(T& _payload) : payloadType(_payload.GetPayloadType()), payload(_payload) { CalculateCheckSum(); }
+    Packet(PacketPayloadType _payloadType, T& _payload) : payloadType(_payloadType), payload(_payload) { CalculateCheckSum(); }
     void CalculateCheckSum()
     {
-        checkSum = CalcCheckSum(payloadType, &payload, sizeof(payload));
+        checkSum = CalcCheckSum(payloadType, (uint8_t*)&payload, sizeof(payload));
     }
 
     const uint8_t startValue = 0xAA;
@@ -45,7 +47,6 @@ struct Packet
 
 namespace Payload
 {
-
     struct Payload
     {
         PacketPayloadType GetPayloadType() { return PacketPayloadType::None; }
@@ -75,8 +76,14 @@ namespace Payload
 
         float angle = 0; //rad
     };
-}
+    
+    struct BlinkToggle : public Payload
+    {
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::BlinkToggle; }
 
+    };
+#pragma pack(pop)
+}
 
 inline uint8_t GetPayloadSize(PacketPayloadType type)
 {
@@ -87,6 +94,13 @@ inline uint8_t GetPayloadSize(PacketPayloadType type)
         return 0xFF;
     case PacketPayloadType::HcSr04Reading:
         return sizeof(Payload::HcSr04Reading);
+    case PacketPayloadType::MoveForward:
+        return sizeof(Payload::MoveForward);
+    case PacketPayloadType::Rotate:
+        return sizeof(Payload::Rotate);
+    case PacketPayloadType::BlinkToggle:
+        return sizeof(Payload::BlinkToggle);
     }
 }
+
 }

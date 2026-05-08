@@ -66,8 +66,7 @@ void ComMap::Reset()
 	mapWidthInBytes = mapWidthInCells / cellsInByte;
 
 	ZeroMap();
-	//Position = FVector2D::ZeroVector;
-	//Rotation = 0;
+	DiscoverCellsAroundStart();
 }
 
 void ComMap::ResetOutline()
@@ -78,7 +77,7 @@ void ComMap::ResetOutline()
 inline void ComMap::UpdateCell(int32_t x, int32_t y, EMapCellState newState)
 {
 	CellPtr cell = GetCell({ x,y });
-
+	if (cell.byteOfCells == nullptr) return;
 	switch (cell.Get())
 	{
 		case EMapCellState::Wall:
@@ -237,3 +236,15 @@ void ComMap::UpdateMapFromScan(Transform transform, float range, float coneAngle
 	}
 }
 
+void ComMap::DiscoverCellsAroundStart()
+{
+	Vector2<int32_t> checkedCell;
+	const int32_t searchRange = 10 / cellSizeInCm;
+	for (checkedCell.y = -searchRange; checkedCell.y < searchRange; ++checkedCell.y)
+	{
+		for (checkedCell.x = -searchRange; checkedCell.x < searchRange; ++checkedCell.x)
+		{
+			GetCell(checkedCell).Set(EMapCellState::Empty);
+		}
+	}
+}

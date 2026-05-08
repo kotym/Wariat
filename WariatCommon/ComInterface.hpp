@@ -10,10 +10,11 @@ namespace WariatCommon
 template<class Derived>
 class ComInterface
 {
-    template <class T>
-    void SendPacket(Packet<T> packet)
+public:
+    template<std::derived_from<WariatCommon::Payload::Payload> PayloadClass>
+    void SendData(PayloadClass payload)
     {
-        Derived::SendPacket(packet);
+        Derived::SendData(payload);
     }
 };
 

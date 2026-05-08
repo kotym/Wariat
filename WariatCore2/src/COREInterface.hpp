@@ -4,7 +4,6 @@
 #include "Motors.hpp"
 #include <concepts>
 
-
 class COREInterface
 {
 public:
@@ -15,33 +14,35 @@ public:
 private:
     COREInterface(hFramework::hSerial& _uart) : uart(_uart) 
     {
-        uart.init(11520);
+        uart.init(115200, Parity::None, StopBits::One);
     }
 public:
     template<std::derived_from<WariatCommon::Payload::Payload> PayloadClass>
     void SendEvent(PayloadClass payload){
         WariatCommon::Packet<PayloadClass> packet(payload);
-        packet.CalculateCheckSum();
-        uart.write(packet, sizeof(packet));
+        uart.write((void*)&packet, sizeof(packet));
     }
 
     void ReceiveCommands()
     {
-        while(true)
-        {
-            uint8_t state = 0;
-            WariatCommon::PacketPayloadType payloadType = WariatCommon::PacketPayloadType::None;
-            uint8_t payloadSize = 0;
-            uint8_t payload[128];
+        uint8_t state = 0;
+        WariatCommon::PacketPayloadType payloadType = WariatCommon::PacketPayloadType::None;
+        uint8_t payloadSize = 0;
+        uint8_t payload[128];
 
-            auto readingError = [&](){
+        auto readingError = [&](){
+                Serial.printf("error: %d\n", state);
                 uart.flushRx();
                 state = 0;
                 // log
             };
 
-            if (uart.waitForData(12345653))
+        while(true)
+        {
+            // TODO Czy to czeka blokujac??
+            if (uart.waitForData(1))
             {
+                Serial.printf("receiving state: %d\n", state);
                 switch (state)
                 {
                 case 0:
@@ -49,6 +50,7 @@ public:
                     {
                         uint8_t start = 0;
                         uart.read(&start, 1, INFINITE);
+                        Serial.printf("start: %d\n", start);
                         if(start != 0xAA)
                         {
                             readingError();
@@ -60,13 +62,15 @@ public:
                 case 1:
                     if (uart.available() >= 1)
                     {
-                        uart.read(&payloadType, 1, INFINITE);
+                        uart.read((void*)&payloadType, 1, INFINITE);
+                        Serial.printf("payloadType: %d\n", payloadType);
                         state = 2;
                     }
                     break;
                 case 2:
                 {
                     payloadSize = WariatCommon::GetPayloadSize(payloadType);
+                    Serial.printf("payloadSize: %d\n", payloadSize);
                     if (payloadSize == 0) {
                         state = 3;
                         break;
@@ -86,11 +90,14 @@ public:
                             uint8_t end;
                         } data;
                         uart.read(&data, sizeof(data), INFINITE);
+                        Serial.printf("data: %d %d\n", data.checkSum, data.end);
                         if (data.end != 0xFA) {
                             readingError();
                             break;
                         } 
-                        if (WariatCommon::CalcCheckSum(payloadType, payload, payloadSize) != data.checkSum) {
+                        uint8_t checkSum = WariatCommon::CalcCheckSum(payloadType, payload, payloadSize);
+                        Serial.printf("checkSum: %d\n", checkSum);
+                        if (checkSum != data.checkSum) {
                             readingError();
                             break;
                         }
@@ -100,11 +107,14 @@ public:
                     }
                 }
             }
+            
+            sys.delay_ms(50); // TODO czy to potrzebne?
         }
     }
 
     void ProcessCommand(WariatCommon::PacketPayloadType payloadType, void* payload)
     {
+        Serial.printf("processing command: Type: %d", (int)payloadType);
         switch (payloadType)
         {
         case WariatCommon::PacketPayloadType::Stop:
@@ -115,6 +125,10 @@ public:
             break;
         case WariatCommon::PacketPayloadType::Rotate:
             Motors::Get().Rotate(static_cast<WariatCommon::Payload::Rotate*>(payload)->angle);
+            break;
+        case WariatCommon::PacketPayloadType::BlinkToggle:
+            hLED1.toggle();
+            Serial.printf("blink...");
             break;
         }
     }

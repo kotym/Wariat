@@ -49,8 +49,6 @@ public:
 
     void RenderMap(Transform transform, ComMap& map)
     {
-        int32_t mapWidthInCells = map.GetMapWidthInCells();
-
         transform.position /= map.GetCellSizeInCm();
         Vector2<int32_t> WariatPosOnMap(transform.position);
         Vector2<int32_t> renderedCell;
@@ -87,6 +85,8 @@ public:
         const std::vector<int>& lastScanOutlineCells = map.GetLastScanOutlineCells();
 
         // TODO Outline start point should be calculated from the HC_SR04 location not players
+
+        const int32_t mapWidthInCells = map.GetMapWidthInCells();
 
         for (int Cell : lastScanOutlineCells)
         {

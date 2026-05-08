@@ -6,6 +6,7 @@
 
 class COREHcSr04s
 {
+public:
     COREHcSr04s() : hcSr04s{hSens1, hSens2, hSens3, hSens4}
     {
         sys.taskCreate([&]()
@@ -14,8 +15,10 @@ class COREHcSr04s
                 {
                     int8_t id = ++lastRead % 4;
                     int16_t distance = hcSr04s[id].getDistance();
-                    WariatCommon::Payload::HcSrO4Reading readingPayload(id, distance);
+                    WariatCommon::Payload::HcSr04Reading readingPayload(id, distance);
                     COREInterface::Get().SendEvent(readingPayload);
+                    Serial.printf(" send HCSR04: %d \n", distance);
+                    sys.delay_ms(50);
                 } 
             });
     }

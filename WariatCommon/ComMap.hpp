@@ -70,7 +70,7 @@ struct CellPtr{
 
 class ComMap
 {
-	friend class ComNavi;
+	template<typename> friend class ComNavi;
 public:
 	struct MemoryOps
 	{
@@ -124,6 +124,7 @@ protected:
 	void ReallocMap();
 	void MallocMap();
 	void FreeMap();
+	void DiscoverCellsAroundStart();
 
 protected:
 	// square map of mapWidthInCells x mapWidthInCells

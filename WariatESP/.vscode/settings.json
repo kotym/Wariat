@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32-wrover-kit-3.3v.cfg"
   ],
-  "idf.portWin": "detect",
+  "idf.portWin": "COM4",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32"
   },
@@ -12,5 +12,6 @@
     "--background-index",
     "--query-driver=**",
     "--compile-commands-dir=d:\\Wariat\\WariatCode\\WariatESP\\build"
-  ]
+  ],
+  "idf.flashType": "UART"
 }

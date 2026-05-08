@@ -27,6 +27,16 @@ public:
         y = -y;
     }
 
+    inline float LengthSq() const
+    {
+        return x*x+y*y;
+    }
+
+    inline float Length() const
+    {
+        return sqrtf(LengthSq());
+    }
+
     //template<class A>
     inline Vector2<T> operator-() const
     {
@@ -43,6 +53,18 @@ public:
     inline Vector2<T> operator+(const Vector2<T>& other) const
     {
         return Vector2<T>(x + other.x, y + other.y);
+    }
+
+    //template<class A>
+    inline Vector2<T> operator*(const Vector2<T>& other) const
+    {
+        return Vector2<T>(x * other.x, y * other.y);
+    }
+    
+    //template<class A>
+    inline Vector2<T> operator*(const T val) const
+    {
+        return Vector2<T>(x * val, y * val);
     }
     
     //template<class A>
@@ -77,6 +99,16 @@ public:
         x /= val;
         y /= val;
         return *this;
+    }
+
+    inline bool operator==(const Vector2<T>& other) const
+    {
+        return x == other.x && y == other.y;
+    }
+
+    inline bool operator==(const T val) const
+    {
+        return x == val && y == val;
     }
 };
 

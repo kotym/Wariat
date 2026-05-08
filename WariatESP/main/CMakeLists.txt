@@ -4,7 +4,6 @@ idf_component_register(
         "Map.cpp"
         "uart.cpp"
         "../../WariatCommon/ComMap.cpp"
-        "../../WariatCommon/ComNavi.cpp"
     INCLUDE_DIRS
         "."
         "../../WariatCommon"

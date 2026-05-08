@@ -8,102 +8,116 @@
 #include "ComInterface.hpp"
 #include "MapRenderer.hpp"
 
-// template<typename T, typename Base>
-// concept DerivedFrom = std::is_base_of_v<Base, T>;
-
-// template<DerivedFrom<ComMap> MapClass> ;
-
 namespace WariatCommon
 {
 
-// class Wariat0
-// {
-//     ComNavi& navi;
+enum class EWariatState
+{
+	None,
+	Manual,
+	Autonomous
+};
 
-// };
+template<class T>
+concept MapRendererDerived = std::derived_from<T, MapRenderer<T>>;
 
+template<class T>
+concept ComInterfaceDerived = std::derived_from<T, ComInterface<T>>;
 
-template<std::derived_from<ComMap> MapClass, class MapRendererClass, class ComInterfaceClass>
+template<std::derived_from<ComMap> MapClass, MapRendererDerived MapRendererClass, ComInterfaceDerived ComInterfaceClass>
 class Wariat
 {
 public:
-    static Wariat& Get() {
-        static Wariat wariat;
-        return wariat;
-    }
+	static Wariat& Get() {
+		static Wariat wariat;
+		return wariat;
+	}
 
-    Wariat() : navi(map) {}
+	Wariat() : map(), comInterface(), navi(map, comInterface), mapRenderer() {}
 
-    ComNavi navi;
-    MapClass map;
-    MapRendererClass mapRenderer;
-    //EventDispatcher eventDispatcher;
-    ComInterfaceClass comInterface;
+	MapClass map;
+	ComInterfaceClass comInterface;
+	ComNavi<ComInterfaceClass> navi;
+	MapRendererClass mapRenderer;
+	//EventDispatcher eventDispatcher;
 
-    //int32_t hcSr04Readings[4];
-    Transform hcSr04Offsets[4];
-    //Wheels position ?
+	//int32_t hcSr04Readings[4];
+	Transform hcSr04Offsets[4];
+	//Wheels position ?
 
-    Transform transform;
-    // current hsm state
+	Transform transform;
+	// current hsm state
+
+	EWariatState state = EWariatState::Autonomous;
 
 public:
-    void ProcessEvent(PacketPayloadType payloadType, void* payload)
+	void ProcessEvent(PacketPayloadType payloadType, void* payload)
+	{
+		if (payload == nullptr)
+		{
+			return;
+		}
+		switch (payloadType)
+		{
+			case PacketPayloadType::None:
+			default: 
+				break;
+			case PacketPayloadType::HcSr04Reading:
+			{
+				Payload::HcSr04Reading& hcSr04Reading = *static_cast<Payload::HcSr04Reading*>(payload);
+				ProcessHcSr04Reading(hcSr04Reading);
+				break;
+			}
+			case PacketPayloadType::Stop:
+				// TODO
+				// Stop everything
+				break;
+			case PacketPayloadType::OdometryReading:
+				// TODO
+				// Update odometry position
+				break;
+		}
+	}
+	
+    template<std::derived_from<WariatCommon::Payload::Payload> PayloadClass>
+    void SendData(PayloadClass payload)
     {
-        if (payload == nullptr)
-        {
-            return;
-        }
-        switch (payloadType)
-        {
-            case PacketPayloadType::None:
-            default: 
-                break;
-            case PacketPayloadType::HcSr04Reading:
-            {
-                Payload::HcSr04Reading& hcSr04Reading = *static_cast<Payload::HcSr04Reading*>(payload);
-                ProcessHcSr04Reading(hcSr04Reading);
-                break;
-            }
-            case PacketPayloadType::Stop:
-                // TODO
-                // Stop everything
-                break;
-            case PacketPayloadType::OdometryReading:
-                // TODO
-                // Update odometry position
-                break;
-        }
+        comInterface.SendData(payload);
     }
 
-    template<class T>
-    void SendPacket(Packet<T> packet)
-    {
-        comInterface.SendPacket(packet);
-    }
+	void SetState(EWariatState newState)
+	{
+		state = newState;
+		navi.Reset();
+	}
 
-    void Update()
-    {
-        mapRenderer.RenderMap(transform, map);
-    }
+	void Update()
+	{
+		mapRenderer.RenderMap(transform, map);
 
-    void GetHcSr04RelativePos(Transform& outTransform, int8_t id)
-    {
-        outTransform = transform;
-        outTransform.rotation += hcSr04Offsets[id].rotation;
-        const float cos = cosf(transform.rotation), sin = sinf(transform.rotation);
-        outTransform.position.x += hcSr04Offsets[id].position.x * cos - hcSr04Offsets[id].position.y * sin;
-        outTransform.position.y += hcSr04Offsets[id].position.x * sin + hcSr04Offsets[id].position.y * cos;
-    }
+		if (state == EWariatState::Autonomous)
+			navi.Update(transform);
 
-    void ProcessHcSr04Reading(Payload::HcSr04Reading& hcSr04Reading)
-    {
-        if (hcSr04Reading.id == 0) 
-            map.ResetOutline();
-        Transform sensorTransform;
-        GetHcSr04RelativePos(sensorTransform, hcSr04Reading.id);
-        map.UpdateMapFromScan(sensorTransform, hcSr04Reading.distance - 1, 0.5235987755f /* 30 deg in rad */, true, sensorTransform.position - transform.position);
-    }
+	}
+
+	void GetHcSr04RelativePos(Transform& outTransform, int8_t id)
+	{
+		outTransform = transform;
+		outTransform.rotation += hcSr04Offsets[id].rotation;
+		const float cos = cosf(transform.rotation), sin = sinf(transform.rotation);
+		outTransform.position.x += hcSr04Offsets[id].position.x * cos - hcSr04Offsets[id].position.y * sin;
+		outTransform.position.y += hcSr04Offsets[id].position.x * sin + hcSr04Offsets[id].position.y * cos;
+	}
+
+	void ProcessHcSr04Reading(Payload::HcSr04Reading& hcSr04Reading)
+	{
+		printf("hcSr04ReadingProcessing: id: %d, distance: %d", (int)hcSr04Reading.id, hcSr04Reading.distance);
+		if (hcSr04Reading.id == 0) 
+			map.ResetOutline();
+		Transform sensorTransform;
+		GetHcSr04RelativePos(sensorTransform, hcSr04Reading.id);
+		map.UpdateMapFromScan(sensorTransform, hcSr04Reading.distance * 0.9f, 0.5235987755f /* 30 deg in rad */, hcSr04Reading.distance < 300, sensorTransform.position - transform.position);
+	}
 
 };
 
