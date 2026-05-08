@@ -16,16 +16,16 @@ enum class EMapCellState : uint8_t
 
 union ByteOfCells{
 	struct {
-		uint8_t cell0 : 2;
-		uint8_t cell1 : 2;
-		uint8_t cell2 : 2;
-		uint8_t cell3 : 2;
+		uint8_t cell0 : 3;
+		uint8_t cell1 : 3;
+		uint8_t cell2 : 3;
+		uint8_t cell3 : 3;
 	};
 	struct {
-		EMapCellState cell0E : 2;
-		EMapCellState cell1E : 2;
-		EMapCellState cell2E : 2;
-		EMapCellState cell3E : 2;
+		EMapCellState cell0E : 3;
+		EMapCellState cell1E : 3;
+		EMapCellState cell2E : 3;
+		EMapCellState cell3E : 3;
 	};
 	uint8_t byte;
 	EMapCellState Get(int8_t cellId)

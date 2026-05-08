@@ -3,9 +3,23 @@ idf_component_register(
         "main.cpp"
         "Map.cpp"
         "uart.cpp"
+        "STM32Interface.cpp"
+        "WWW.cpp"
+        "keep_alive.c"
+        "protocol_examples_common.cpp"
         "../../WariatCommon/ComMap.cpp"
         "../../WariatCommon/ComNavi.cpp"
     INCLUDE_DIRS
         "."
         "../../WariatCommon"
+    REQUIRES
+        esp_https_server
+        esp_wifi
+        esp_eth
+        nvs_flash
+        esp_timer
+        driver
+    EMBED_FILES
+        servercert.pem
+        prvtkey.pem
 )
