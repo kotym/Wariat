@@ -13,7 +13,7 @@ class WARIATUE_API PureWariat : public WariatCommon::Wariat<PureMap, UEMapRender
 	
 
 public:
-	PureWariat() {}
+	PureWariat() { }
 	~PureWariat();
 
 };

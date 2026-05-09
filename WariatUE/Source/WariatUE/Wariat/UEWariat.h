@@ -71,8 +71,13 @@ class WARIATUE_API AUEWariat : public APawn
 
 	// CORE2 part ///////////////////////////////////////////
 
+public:
+	void ProcessCommand(WariatCommon::PacketPayloadType payloadType, void* payload);
+
 
 	// CORE2 helpers //////////////////////////////////////////
+
+	bool bcallbackOnMoveFinished = false;
 
 
 	// other Wariat helpers /////////////////////////////////////
@@ -83,16 +88,12 @@ public:
 	// Sets default values for this pawn's properties
 	AUEWariat();
 
-	UFUNCTION(BlueprintCallable, Category = "Kinematic")
-	void DriveDistance(float DistanceCm, float SpeedCmPerSec);
+	void MoveForward(float DistanceCm, float SpeedCmPerSec, bool bFinishCallback = true);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinematic")
 	void DriveSpeed(float SpeedCmPerSec);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinematic")
-	void TurnDegrees(float Degrees, float TurnRateDegPerSec);
+	void Rotate(float Angle, float TurnRateDegPerSec, bool bFinishCallback = true);
 
-	UFUNCTION(BlueprintCallable, Category = "Kinematic")
 	void StopKinematic();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Kinematic")

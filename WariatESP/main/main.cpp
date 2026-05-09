@@ -10,6 +10,7 @@ void InitUart();
 
 static constexpr gpio_num_t kBuiltInLed = GPIO_NUM_2;
 
+WariatESP wariat;
 
 extern "C" void app_main(void)
 {
@@ -18,8 +19,7 @@ extern "C" void app_main(void)
 
     gpio_reset_pin(kBuiltInLed);
     gpio_set_direction(kBuiltInLed, GPIO_MODE_OUTPUT);
-    
-    WariatESP wariat;
+
     bool ledState = false;
     while(true)
     {

@@ -16,6 +16,8 @@ static const char *TAG = "uart_events";
 // TODO this buffers can be shrunk
 static QueueHandle_t uart3_queue;
 
+extern WariatESP wariat;
+
 static void uart_event_task(void *pvParameters)
 {
     uart_event_t event;
@@ -80,8 +82,7 @@ static void uart_event_task(void *pvParameters)
                 }
 
                 // Process event
-                auto w = WariatESP::Get();
-                w.ProcessEvent(payloadType, payload);
+                wariat.ProcessEvent(payloadType, payload);
             }
             break;
             case UART_FIFO_OVF:

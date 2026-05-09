@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "WariatCommon"
+		},
+		{
+			"path": "../../HusarionCore2Tools/dist/HusarionCore2Tools-v1.1.1/HusarionCore2Tools-v1.1.1"
 		}
 	],
 	"settings": {}

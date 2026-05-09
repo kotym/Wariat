@@ -12,7 +12,9 @@ enum class PacketPayloadType : uint8_t
     OdometryReading,
     MoveForward,
     Rotate,
-    BlinkToggle
+    RotateAndMove,
+    BlinkToggle,
+    MoveFinished
 };
 
 inline uint8_t CalcCheckSum(PacketPayloadType payloadType, uint8_t* data, uint8_t size)
@@ -77,10 +79,24 @@ namespace Payload
         float angle = 0; //rad
     };
     
+    struct RotateAndMove : public Payload
+    {
+        RotateAndMove(float _angle, float _distanceCm) : angle(_angle), distanceCm(_distanceCm) {}
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::RotateAndMove; }
+
+        float angle = 0; //rad
+        float distanceCm = 0; //rad
+    };
+    
     struct BlinkToggle : public Payload
     {
         PacketPayloadType GetPayloadType() { return PacketPayloadType::BlinkToggle; }
 
+    };
+    
+    struct MoveFinished : public Payload
+    {
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::MoveFinished; }
     };
 #pragma pack(pop)
 }
@@ -98,8 +114,12 @@ inline uint8_t GetPayloadSize(PacketPayloadType type)
         return sizeof(Payload::MoveForward);
     case PacketPayloadType::Rotate:
         return sizeof(Payload::Rotate);
+    case PacketPayloadType::RotateAndMove:
+        return sizeof(Payload::RotateAndMove);
     case PacketPayloadType::BlinkToggle:
         return sizeof(Payload::BlinkToggle);
+    case PacketPayloadType::MoveFinished:
+        return sizeof(Payload::MoveFinished);
     }
 }
 

@@ -28,11 +28,6 @@ template<std::derived_from<ComMap> MapClass, MapRendererDerived MapRendererClass
 class Wariat
 {
 public:
-	static Wariat& Get() {
-		static Wariat wariat;
-		return wariat;
-	}
-
 	Wariat() : map(), comInterface(), navi(map, comInterface), mapRenderer() {}
 
 	MapClass map;
@@ -75,6 +70,11 @@ public:
 			case PacketPayloadType::OdometryReading:
 				// TODO
 				// Update odometry position
+				break;
+			case PacketPayloadType::MoveFinished:
+				// TODO
+				// Update odometry position
+				navi.MoveFinished();
 				break;
 		}
 	}

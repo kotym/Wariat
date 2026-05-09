@@ -1,8 +1,12 @@
 #pragma once
 
-#include <cstdint>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cstdint>
+#include <corecrt_math_defines.h>
+
+namespace WariatMath
+{
 
 template <typename T>
 class Vector2{
@@ -110,6 +114,34 @@ public:
     {
         return x == val && y == val;
     }
+
+    template<class T>
+    inline Vector2<T>& Normalize()
+    {
+        const float length = Length();
+        x /= length;
+        y /= length;
+        return *this;
+    }
+
+    template<class T>
+    inline Vector2<T> GetNormalized() const
+    {
+        const float length = Length();
+        return Vector2<T>(x/length, y/length);
+    }
+
+    template<class T>
+    inline static float Dot(Vector2<T> a, Vector2<T> b)
+    {
+        return a.x * b.x + a.y * b.y;
+    }
+
+    template<class T>
+    inline static float Angle(Vector2<T> a, Vector2<T> b)
+    {
+        return acosf(Dot(a.Normalize(), b.Normalize()));
+    }
 };
 
 //inline float DegreesToRadians(float deg) { return deg * M_PI / 180; }
@@ -119,3 +151,19 @@ struct Transform
     Vector2<float> position;
     float rotation;
 };
+
+inline float NormalizeAngle(float angle)
+{
+    constexpr float twoPi = static_cast<float>(2.0 * M_PI);
+    constexpr float pi = static_cast<float>(M_PI);
+    float normalized = remainderf(angle, twoPi);
+    if (normalized <= -pi)
+    {
+        normalized = pi;
+    }
+    return normalized;
+}
+
+}
+
+using namespace WariatMath;

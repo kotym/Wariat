@@ -10,8 +10,11 @@ class ComNavi
     {
         None,
         Start,
+        WaitAfterStart,
         SearchForWall,
         DriveToWall,
+        RotatingToWall,
+        MovingToWall,
         DriveAlongWall,
         DriveAround,
     };
@@ -25,8 +28,12 @@ public:
     ~ComNavi() = default;
 
     EState state = EState::Start;
-
+    bool bMoving = false;
 public:
+    void MoveFinished()
+    {
+        bMoving = false;
+    }
     void Update(const Transform& transform)
     {
         switch (state)
@@ -37,11 +44,22 @@ public:
                 Start();
                 state = EState::SearchForWall;
                 break;
-            case EState::Search:
+            case EState::WaitAfterStart:
+                if (!bMoving) state = EState::SearchForWall;
+                break;
+            case EState::SearchForWall:
                 SearchForWall(transform);
                 break;
             case EState::DriveToWall:
                 DriveToWall(transform);
+                break;
+            case EState::RotatingToWall:
+                if (!bMoving) state = EState::MovingToWall;
+                bMoving = true;
+                comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
+                break;
+            case EState::MovingToWall:
+                if (!bMoving) state = EState::DriveAlongWall;
                 break;
             case EState::DriveAlongWall:
                 DriveAlongWall(transform);
@@ -61,8 +79,8 @@ public:
 
     void Start()
     {
-        WariatCommon::Payload::Rotate payload(6.29f); // 360 deg
-        comInterface.SendPacket(payload);
+        bMoving = true;
+        comInterface.SendData(WariatCommon::Payload::Rotate(6.29f)); // 360 deg
     }
 
     void SearchForWall(const Transform& transform)
@@ -70,7 +88,7 @@ public:
         const int32_t mapCellSizeInCm = map.GetCellSizeInCm();
 
         Vector2<int32_t> nearestWall;
-        float nearestDistSq = __FLT_MAX__;
+        float nearestDistSq = FLT_MAX;
         float nearestAcceptTreshold = 50 / mapCellSizeInCm;
         nearestAcceptTreshold *= nearestAcceptTreshold;
 
@@ -105,7 +123,7 @@ public:
             destination += nearestAcceptTreshold;
             // wall not found
             // drive wherever
-            state = EState::Drive;
+            state = EState::DriveAround;
             return;
         }
 
@@ -116,18 +134,20 @@ public:
 
     void DriveToWall(const Transform& transform)
     {
-        Vector2<float> street = destination - transform.position;
-        if (street.LengthSq() < 30 * 30)
+        Vector2<float> path = destination - transform.position;
+        if (path.LengthSq() < 30 * 30)
         {
-            state = EState::DriveAlongWall;
-            return;
+            const float angle = acosf(path.x / path.Length()) - transform.rotation;
+            comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angle)));
+            state = EState::RotatingToWall;
+            bMoving = true;
         }
     }
 
     void DriveAround(const Transform& transform)
     {
-        Vector2<float> street = destination - transform.position;
-        if (street.LengthSq() < 10 * 10)
+        Vector2<float> path = destination - transform.position;
+        if (path.LengthSq() < 10 * 10)
         {
             state = EState::SearchForWall;
             return;

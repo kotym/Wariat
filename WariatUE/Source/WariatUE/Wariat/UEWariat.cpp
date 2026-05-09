@@ -8,6 +8,39 @@
 #include "HC_SR04.h"
 #include "../WariatCommon/ComMath.hpp"
 
+
+//void ProcessEventUE(WariatCommon::PacketPayloadType payloadType, void* payload)
+//{
+//	pureWariat->ProcessEvent(payloadType, payload);
+//}
+
+void AUEWariat::ProcessCommand(WariatCommon::PacketPayloadType payloadType, void* payload)
+{
+	switch (payloadType)
+	{
+		case WariatCommon::PacketPayloadType::Stop:
+			StopKinematic();
+			break;
+		case WariatCommon::PacketPayloadType::MoveForward:
+			MoveForward(static_cast<WariatCommon::Payload::MoveForward*>(payload)->distanceCm, MaxSpeedCmPerSec);
+			break;
+		case WariatCommon::PacketPayloadType::Rotate:
+			Rotate(static_cast<WariatCommon::Payload::Rotate*>(payload)->angle, MaxTurnRateDegPerSec);
+			break;
+		//case WariatCommon::PacketPayloadType::RotateAndMove:
+		//{
+		//	WariatCommon::Payload::RotateAndMove* payload = static_cast<WariatCommon::Payload::RotateAndMove*>(payload);
+		//	Rotate(payload->angle, MaxTurnRateDegPerSec, false);
+		//	//MoveForward(payload->distanceCm, MaxSpeedCmPerSec);
+		//	break;
+		//}
+		case WariatCommon::PacketPayloadType::BlinkToggle:
+			//hLED1.toggle();
+			//Serial.printf("blink...");
+			break;
+	}
+}
+
 // Sets default values
 AUEWariat::AUEWariat()
 {
@@ -31,7 +64,7 @@ AUEWariat::AUEWariat()
 
 	BackCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Back Camera"));
 	BackCamera->SetupAttachment(BackSpringArm);
-
+	pureWariat.comInterface.ueWariat = this;
 }
 
 // Called when the game starts or when spawned
@@ -135,8 +168,9 @@ void AUEWariat::CheckHC_SR04()
 	}
 }
 
-void AUEWariat::DriveDistance(float DistanceCm, float SpeedCmPerSec)
+void AUEWariat::MoveForward(float DistanceCm, float SpeedCmPerSec, bool bFinishCallback)
 {
+	bcallbackOnMoveFinished = bFinishCallback;
 	StopKinematic();
 	bDrivingDistance = !FMath::IsNearlyZero(DistanceCm);
 	RemainingDistance = DistanceCm;
@@ -151,11 +185,13 @@ void AUEWariat::DriveSpeed(float SpeedCmPerSec)
 	CommandSpeed = FMath::Clamp(SpeedCmPerSec, -MaxSpeedCmPerSec, MaxSpeedCmPerSec);
 }
 
-void AUEWariat::TurnDegrees(float Degrees, float TurnRateDegPerSec)
+void AUEWariat::Rotate(float Angle, float TurnRateDegPerSec, bool bFinishCallback)
 {
+	bcallbackOnMoveFinished = bFinishCallback;
 	StopKinematic();
-	bTurning = !FMath::IsNearlyZero(Degrees);
-	RemainingYaw = Degrees;
+	Angle = FMath::RadiansToDegrees(Angle);
+	bTurning = !FMath::IsNearlyZero(Angle);
+	RemainingYaw = Angle;
 	CommandTurnRate = FMath::Abs(TurnRateDegPerSec) > 0.0f ? FMath::Abs(TurnRateDegPerSec) : MaxTurnRateDegPerSec;
 }
 
@@ -191,6 +227,7 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 			bDrivingDistance = false;
 			RemainingDistance = 0.0f;
 			ForwardSpeed = 0.0f;
+			if (bcallbackOnMoveFinished) pureWariat.SendData(WariatCommon::Payload::MoveFinished());
 		}
 	}
 	else if (bTurning)
@@ -205,6 +242,7 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 			bTurning = false;
 			RemainingYaw = 0.0f;
 			TurnRate = 0.0f;
+			if (bcallbackOnMoveFinished) pureWariat.SendData(WariatCommon::Payload::MoveFinished());
 		}
 	}
 	else if (!FMath::IsNearlyZero(CommandSpeed))

@@ -33,7 +33,6 @@ template<class Derived>
 class MapRenderer
 {
 public:
-
     const Vector2<uint16_t> renderedMapSize = {256, 256};
     const Vector2<uint16_t> renderedMapHalfSize = {128, 128};
 
