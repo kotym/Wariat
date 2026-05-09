@@ -7,14 +7,15 @@ namespace WariatCommon
 enum class PacketPayloadType : uint8_t
 {
     None = 0,
-    HcSr04Reading,
     Stop,
+    HcSr04Reading,
     OdometryReading,
     MoveForward,
     Rotate,
-    RotateAndMove,
+    RotateAndMove, // TODO remove
     BlinkToggle,
-    MoveFinished
+    MoveFinished,
+    RotationFinished
 };
 
 inline uint8_t CalcCheckSum(PacketPayloadType payloadType, uint8_t* data, uint8_t size)
@@ -52,6 +53,11 @@ namespace Payload
     struct Payload
     {
         PacketPayloadType GetPayloadType() { return PacketPayloadType::None; }
+    };
+    
+    struct Stop : public Payload
+    {
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::Stop; }
     };
     
     struct HcSr04Reading : public Payload
@@ -98,6 +104,11 @@ namespace Payload
     {
         PacketPayloadType GetPayloadType() { return PacketPayloadType::MoveFinished; }
     };
+    
+    struct RotationFinished : public Payload
+    {
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::RotationFinished; }
+    };
 #pragma pack(pop)
 }
 
@@ -107,7 +118,9 @@ inline uint8_t GetPayloadSize(PacketPayloadType type)
     {
     case PacketPayloadType::None:
     default:        
-        return 0xFF;
+        return 0;
+    case PacketPayloadType::Stop:
+        return sizeof(Payload::Stop);
     case PacketPayloadType::HcSr04Reading:
         return sizeof(Payload::HcSr04Reading);
     case PacketPayloadType::MoveForward:
@@ -120,6 +133,8 @@ inline uint8_t GetPayloadSize(PacketPayloadType type)
         return sizeof(Payload::BlinkToggle);
     case PacketPayloadType::MoveFinished:
         return sizeof(Payload::MoveFinished);
+    case PacketPayloadType::RotationFinished:
+        return sizeof(Payload::RotationFinished);
     }
 }
 

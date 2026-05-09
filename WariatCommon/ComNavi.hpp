@@ -3,23 +3,25 @@
 #include "ComMap.hpp"
 #include "ComProtocol.hpp"
 
+enum class EState
+{
+    None,
+    Start,
+    WaitAfterStart,
+    SearchForWall,
+    DriveToWall,
+    RotatingToWall,
+    MovingToWall,
+    DriveAlongWall,
+    DriveAround,
+    DrivingAround,
+};
+
 template<typename ComInterfaceClass>
 class ComNavi
 {
-    enum class EState
-    {
-        None,
-        Start,
-        WaitAfterStart,
-        SearchForWall,
-        DriveToWall,
-        RotatingToWall,
-        MovingToWall,
-        DriveAlongWall,
-        DriveAround,
-    };
-
 public:
+
     ComNavi(const ComMap& comMap, ComInterfaceClass& _comInterface)
         : map(comMap)
         , comInterface(_comInterface)
@@ -34,6 +36,16 @@ public:
     {
         bMoving = false;
     }
+
+    void DriveToDestination(const Transform& transform)
+    {
+        Vector2<float> path = destination - transform.position;
+        const float angle = acosf(path.x / path.Length()) - transform.rotation;
+        comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angle)));
+        state = EState::RotatingToWall;
+        bMoving = true;
+    }
+
     void Update(const Transform& transform)
     {
         switch (state)
@@ -42,7 +54,7 @@ public:
                 break;
             case EState::Start:
                 Start();
-                state = EState::SearchForWall;
+                state = EState::WaitAfterStart;
                 break;
             case EState::WaitAfterStart:
                 if (!bMoving) state = EState::SearchForWall;
@@ -54,9 +66,12 @@ public:
                 DriveToWall(transform);
                 break;
             case EState::RotatingToWall:
-                if (!bMoving) state = EState::MovingToWall;
-                bMoving = true;
-                comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
+                if (!bMoving)
+                {
+                    state = EState::MovingToWall;
+                    bMoving = true;
+                    comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
+                }
                 break;
             case EState::MovingToWall:
                 if (!bMoving) state = EState::DriveAlongWall;
@@ -66,6 +81,9 @@ public:
                 break;
             case EState::DriveAround:
                 DriveAround(transform);
+                break;
+            case EState::DrivingAround:
+                if (!bMoving) state = EState::SearchForWall;
                 break;
             default:
                 break;
@@ -80,7 +98,7 @@ public:
     void Start()
     {
         bMoving = true;
-        comInterface.SendData(WariatCommon::Payload::Rotate(6.29f)); // 360 deg
+        wariat.Rotate(6.29f); // 360 deg
     }
 
     void SearchForWall(const Transform& transform)
@@ -116,15 +134,19 @@ public:
                 }                
             }
         }
-
-        if (nearestDistSq > map.GetMapWidthInCells())
         {
-            destination = wariatPosOnMap * mapCellSizeInCm;
-            destination += nearestAcceptTreshold;
-            // wall not found
-            // drive wherever
-            state = EState::DriveAround;
-            return;
+            float mapWidthSq = map.GetMapWidthInCells();
+            mapWidthSq *= mapWidthSq;
+
+            if (nearestDistSq > mapWidthSq)
+            {
+                destination = wariatPosOnMap * mapCellSizeInCm;
+                destination += nearestAcceptTreshold;
+                // wall not found
+                // drive wherever
+                state = EState::DriveAround;
+                return;
+            }
         }
 
     wallFound:
@@ -135,7 +157,7 @@ public:
     void DriveToWall(const Transform& transform)
     {
         Vector2<float> path = destination - transform.position;
-        if (path.LengthSq() < 30 * 30)
+        //if (path.LengthSq() < 30 * 30)
         {
             const float angle = acosf(path.x / path.Length()) - transform.rotation;
             comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angle)));
@@ -146,12 +168,11 @@ public:
 
     void DriveAround(const Transform& transform)
     {
-        Vector2<float> path = destination - transform.position;
-        if (path.LengthSq() < 10 * 10)
-        {
-            state = EState::SearchForWall;
-            return;
-        }
+        bMoving = true;
+        comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
+
+        state = EState::DrivingAround;
+        return;
     }
 
     void DriveAlongWall(const Transform& transform)
@@ -182,7 +203,7 @@ public:
         const float wDivSinA = wariatWidth / sinA;
     }
 
-protected:
+//protected:
     const ComMap& map;
     ComInterfaceClass& comInterface;
 

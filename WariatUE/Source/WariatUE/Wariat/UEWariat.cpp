@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Wariat/UEWariat.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
@@ -47,7 +47,7 @@ AUEWariat::AUEWariat()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 	BackSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Back Spring Arm"));
 	BackSpringArm->SetupAttachment(Mesh);
@@ -96,6 +96,30 @@ void AUEWariat::Tick(float DeltaTime)
 	pureWariat.transform.position = { (float)pos.X, (float)pos.Y };
 	pureWariat.transform.rotation = FMath::DegreesToRadians(GetActorRotation().Yaw - ZeroRotation);
 	pureWariat.Update();
+
+	static EState LastState = EState::None;
+	if (LastState != pureWariat.navi.state)
+	{
+		LastState = pureWariat.navi.state;
+		FString text;
+		switch (pureWariat.navi.state)
+		{
+			case EState::None: text = TEXT("None"); break;
+			case EState::Start: text = TEXT("Start"); break;
+			case EState::WaitAfterStart: text = TEXT("WaitAfterStart"); break;
+			case EState::SearchForWall: text = TEXT("SearchForWall"); break;
+			case EState::DriveToWall: text = TEXT("DriveToWall"); break;
+			case EState::RotatingToWall: text = TEXT("RotatingToWall"); break;
+			case EState::MovingToWall: text = TEXT("MovingToWall"); break;
+			case EState::DriveAlongWall: text = TEXT("DriveAlongWall"); break;
+			case EState::DriveAround: text = TEXT("DriveAround"); break;
+			case EState::DrivingAround: text = TEXT("DrivingAround"); break;
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 60, FColor::Red, text);
+	}
+	GEngine->AddOnScreenDebugMessage(200000000, 60, FColor::Green, FString::Printf(TEXT("transform: x: %f y: %f r: %f"), pureWariat.transform.position.x, pureWariat.transform.position.y, pureWariat.transform.rotation));
+	GEngine->AddOnScreenDebugMessage(100000000, 60, FColor::Orange, FString::Printf(TEXT("destination: x: %f y: %f "), pureWariat.navi.destination.x, pureWariat.navi.destination.y));
 }
 
 // Called to bind functionality to input
@@ -163,8 +187,7 @@ void AUEWariat::CheckHC_SR04()
 		HC_SR04->SphereConeTrace();
 		float Dist = HC_SR04->GetLastDetectionDist();
 
-		WariatCommon::Payload::HcSr04Reading reading(i++, Dist);
-		pureWariat.ProcessEvent(WariatCommon::PacketPayloadType::HcSr04Reading, &reading);
+		SendEvent(WariatCommon::Payload::HcSr04Reading(i++, Dist));
 	}
 }
 
@@ -227,7 +250,7 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 			bDrivingDistance = false;
 			RemainingDistance = 0.0f;
 			ForwardSpeed = 0.0f;
-			if (bcallbackOnMoveFinished) pureWariat.SendData(WariatCommon::Payload::MoveFinished());
+			if (bcallbackOnMoveFinished) SendEvent(WariatCommon::Payload::MoveFinished());
 		}
 	}
 	else if (bTurning)
@@ -242,18 +265,18 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 			bTurning = false;
 			RemainingYaw = 0.0f;
 			TurnRate = 0.0f;
-			if (bcallbackOnMoveFinished) pureWariat.SendData(WariatCommon::Payload::MoveFinished());
+			if (bcallbackOnMoveFinished) SendEvent(WariatCommon::Payload::RotationFinished());
 		}
 	}
 	else if (!FMath::IsNearlyZero(CommandSpeed))
 	{
 		ForwardSpeed = CommandSpeed;
 	}
-
-	if (FMath::IsNearlyZero(ForwardSpeed) && FMath::IsNearlyZero(TurnRate))
-	{
-		return;
-	}
+	//else
+	//if (FMath::IsNearlyZero(ForwardSpeed) && FMath::IsNearlyZero(TurnRate))
+	//{
+	//	return;
+	//}
 
 	FRotator NewRotation = GetActorRotation();
 	NewRotation.Yaw += TurnRate * DeltaTime;

@@ -11,6 +11,146 @@
 namespace WariatCommon
 {
 
+class WariatDriveInterface
+{
+public:
+	typedef void(*DriveCallback)(void);
+
+	enum class EDriveState
+	{
+		None,
+		DriveTo,
+		LookAt,
+		Rotate,
+		MoveForward
+	} state = EDriveState::None;
+
+	Transform transform;
+	Vector2<float> target;
+
+	bool bDriving = false;
+	DriveCallback driveCallback = nullptr;
+
+	float lastRotation = 0;
+	float lastMove = 0;
+
+	bool DriveTo(const Vector2<float>& destination, DriveCallback callback = nullptr)
+	{
+		if (bDriving) return false;
+		state = EDriveState::DriveTo;
+		bDriving = true;
+		target = destination;
+		driveCallback = callback;
+		DriveToInternal(destination);
+		return true;
+	}
+
+	bool LookAt(const Vector2<float>& destination, DriveCallback callback = nullptr)
+	{
+		if (bDriving) return false;
+		state = EDriveState::LookAt;
+		bDriving = true;
+		target = destination;
+		driveCallback = callback;
+		LookAtInternal(destination);
+		return true;
+	}
+
+	bool Rotate(float angleRad, DriveCallback callback = nullptr)
+	{
+		if (bDriving) return false;
+		state = EDriveState::Rotate;
+		bDriving = true;
+		driveCallback = callback;
+		RotateInternal(angleRad);
+		return true;
+	}
+
+	bool MoveForward(float distanceCm, DriveCallback callback = nullptr)
+	{
+		if (bDriving) return false;
+		state = EDriveState::MoveForward;
+		bDriving = true;
+		driveCallback = callback;
+		MoveForwardInternal(distanceCm);
+		return true;
+	}
+
+	void MoveFinished()
+	{
+		// Update position
+		Vector2<float> forwardVector(cosf(transform.rotation), sinf(transform.rotation));
+		transform.position += forwardVector * lastMove;
+		lastMove = 0;
+		if (driveCallback) driveCallback();
+	}
+
+	void RotationFinished()
+	{
+		// Update rotation
+		transform.rotation = NormalizeAngle(transform.rotation + lastRotation);
+
+		switch (state)
+		{
+			case WariatCommon::WariatDriveInterface::EDriveState::DriveTo:
+				MoveForwardInternal((target - transform.position).Length());
+				break;
+			default:
+				if (driveCallback) driveCallback();
+				break;
+		}
+	}
+
+	void Stop()
+	{
+		comInterface.SendData(WariatCommon::Payload::Stop());
+		state = EDriveState::None;
+		target = 0;
+		bDriving = false;
+		driveCallback = nullptr;
+		// TODO In order to don't get lost update position from odometry or reset everything on stop
+		lastRotation = 0;
+		lastMove = 0;
+	}
+
+	void ResetDrive()
+	{
+		state = EDriveState::None;
+		transform = Transform();
+		target = 0;
+		bDriving = false;
+		driveCallback = nullptr;
+		lastRotation = 0;
+		lastMove = 0;
+	}
+
+private:
+	void DriveToInternal(const Vector2<float>& destination)
+	{
+		LookAtInternal(destination);
+	}
+
+	void LookAtInternal(const Vector2<float>& destination)
+	{
+		const Vector2<float> path = destination - transform.position;
+		const float angle = atan2f(path.x, path.y);
+		RotateInternal(angle);
+	}
+
+	void RotateInternal(float angleRad)
+	{
+		lastRotation = angleRad;
+		comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angleRad)));
+	}
+
+	void MoveForwardInternal(float distanceCm)
+	{
+		lastMove = distanceCm;
+		comInterface.SendData(WariatCommon::Payload::MoveForward(distanceCm));
+	}
+};
+
+
 enum class EWariatState
 {
 	None,
@@ -25,7 +165,7 @@ template<class T>
 concept ComInterfaceDerived = std::derived_from<T, ComInterface<T>>;
 
 template<std::derived_from<ComMap> MapClass, MapRendererDerived MapRendererClass, ComInterfaceDerived ComInterfaceClass>
-class Wariat
+class Wariat : public WariatDriveInterface
 {
 public:
 	Wariat() : map(), comInterface(), navi(map, comInterface), mapRenderer() {}
@@ -40,7 +180,7 @@ public:
 	Transform hcSr04Offsets[4];
 	//Wheels position ?
 
-	Transform transform;
+
 	// current hsm state
 
 	EWariatState state = EWariatState::Autonomous;
@@ -72,9 +212,10 @@ public:
 				// Update odometry position
 				break;
 			case PacketPayloadType::MoveFinished:
-				// TODO
-				// Update odometry position
-				navi.MoveFinished();
+				MoveFinished();
+				break;
+			case PacketPayloadType::RotationFinished:
+				RotationFinished();
 				break;
 		}
 	}
@@ -84,6 +225,13 @@ public:
     {
         comInterface.SendData(payload);
     }
+
+	void Reset()
+	{
+		state = EWariatState::Autonomous;
+		ResetDrive();
+		navi.Reset();
+	}
 
 	void SetState(EWariatState newState)
 	{

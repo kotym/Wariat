@@ -24,7 +24,7 @@ class WARIATUE_API AUEWariat : public APawn
 
 	/**  The main skeletal mesh */
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class USkeletalMeshComponent> Mesh;
+	TObjectPtr<class UStaticMeshComponent> Mesh;
 
 	/** Spring Arm for the back camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -79,6 +79,10 @@ public:
 
 	bool bcallbackOnMoveFinished = false;
 
+	template<std::derived_from<WariatCommon::Payload::Payload> PayloadClass>
+	void SendEvent(PayloadClass payload) {
+		pureWariat.ProcessEvent(payload.GetPayloadType(), &payload);
+	}
 
 	// other Wariat helpers /////////////////////////////////////
 

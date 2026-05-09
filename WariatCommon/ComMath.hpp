@@ -70,11 +70,24 @@ public:
     {
         return Vector2<T>(x * val, y * val);
     }
+
+    inline Vector2<T>& operator=(const T val)
+    {
+        x = y = val;
+        return *this;
+    }
     
     //template<class A>
     inline Vector2<T> operator/(const T val) const
     {
         return Vector2<T>(x / val, y / val);
+    }
+
+    inline Vector2<T>& operator+=(const Vector2<T>& other)
+    {
+        x += other.x;
+        y += other.y;
+        return *this;
     }
 
     inline Vector2<T>& operator+=(const T val)
