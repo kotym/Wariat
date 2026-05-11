@@ -90,6 +90,13 @@ public:
         return *this;
     }
 
+    inline Vector2<T>& operator-=(const Vector2<T>& other)
+    {
+        x -= other.x;
+        y -= other.y;
+        return *this;
+    }
+
     inline Vector2<T>& operator+=(const T val)
     {
         x += val;
@@ -128,13 +135,13 @@ public:
         return x == val && y == val;
     }
 
-    template<class T>
-    inline Vector2<T>& Normalize()
+    //template<class T>
+    inline void/*Vector2<T>&*/ Normalize()
     {
         const float length = Length();
         x /= length;
         y /= length;
-        return *this;
+        //return *this;
     }
 
     template<class T>

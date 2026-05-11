@@ -126,7 +126,8 @@ protected:
 	void FreeMap();
 	void DiscoverCellsAroundStart();
 
-protected:
+//protected:
+public:
 	// square map of mapWidthInCells x mapWidthInCells
 	uint8_t* map = nullptr;
 	// number of rows and columns in map
@@ -147,6 +148,10 @@ protected:
 
 	// outline cells indexes
 	std::vector<int> lastScanOutlineCells;
+
+	std::vector<Vector2<int32_t>> lastScannedRight;
+	std::vector<Vector2<int32_t>> lastScannedAhead;
+
 	MemoryOps memoryOps;
 
 

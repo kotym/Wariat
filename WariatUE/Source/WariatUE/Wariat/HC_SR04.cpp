@@ -102,7 +102,7 @@ void UHC_SR04::SphereConeTrace()
 	FVector Start = GetComponentLocation();
 	FVector End = Start + Forward * MaxDetectionDist;
 	
-	DrawDebugLine(GetWorld(), Start, End, FColor::Magenta);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Magenta);
 
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
@@ -124,14 +124,14 @@ void UHC_SR04::SphereConeTrace()
 		FVector SpherePos = Forward * Dist + Start;
 		TArray<FHitResult> Hits;
 		World->SweepMultiByChannel(Hits, SpherePos, SpherePos + Forward, FQuat::Identity, ECollisionChannel_HC_SR04, FCollisionShape::MakeSphere(Radius), Params);
-		DrawDebugSphere(World, SpherePos, Radius, 10, FColor::Orange);
+		//DrawDebugSphere(World, SpherePos, Radius, 10, FColor::Orange);
 		if (afterHit > 0) ++afterHit;
 
 		const int32 HitNum = Hits.Num();
 		for (int i = 0; i < HitNum; ++i)
 		{
 			++afterHit;
-			DrawDebugSphere(World, Hits[i].ImpactPoint, 7.f, 10, FColor::Red);
+			//DrawDebugSphere(World, Hits[i].ImpactPoint, 7.f, 10, FColor::Red);
 			const FVector HitDist = Hits[i].ImpactPoint - Start;
 			const float Dist2 = HitDist.SquaredLength();
 			if (Dist2 < NearestDist)
@@ -140,22 +140,22 @@ void UHC_SR04::SphereConeTrace()
 				Nearest = Hits[i].ImpactPoint;
 			}
 
-			DrawDebugLine(GetWorld(), Start, Hits[i].ImpactPoint, FColor::Orange);
+			//DrawDebugLine(GetWorld(), Start, Hits[i].ImpactPoint, FColor::Orange);
 		}
 
 		Dist += Radius;
 		Radius = Dist * sinAngle;
 	}
 
-	if (GEngine)
-		GEngine->AddOnScreenDebugMessage(123243, 5, FColor::Emerald, FString::Printf(TEXT("SpheresChecked: %d"), SpheresChecked));
+	//if (GEngine)
+	//	GEngine->AddOnScreenDebugMessage(123243, 5, FColor::Emerald, FString::Printf(TEXT("SpheresChecked: %d"), SpheresChecked));
 
 	bLastDetectionWasHit = afterHit > 0;
 	//if (NearestDist == FLT_MAX) return;
 	LastDetectionDist = sqrtf(NearestDist);
 	//LastDetection = Nearest;
 	DrawDebugLine(GetWorld(), Start, Nearest, FColor::Cyan, false, -1, 0, 1);
-	DrawDebugSphere(World, Nearest, 10.f, 10, FColor::Green);	
+	//DrawDebugSphere(World, Nearest, 10.f, 10, FColor::Green);	
 }
 
 //void UHC_SR04::ConeSweep()

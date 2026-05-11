@@ -2,62 +2,44 @@
 #include "ComMath.hpp"
 #include "ComMap.hpp"
 #include "ComProtocol.hpp"
+#include "WariatDrive.hpp"
+
+namespace WariatCommon
+{
 
 enum class EState
 {
     None,
     Start,
-    WaitAfterStart,
     SearchForWall,
     DriveToWall,
-    RotatingToWall,
-    MovingToWall,
     DriveAlongWall,
     DriveAround,
-    DrivingAround,
 };
-
+// TODO why ComNavi needs ComInterface only to pass it to WariatDrive. Fix it
 template<typename ComInterfaceClass>
 class ComNavi
 {
 public:
 
-    ComNavi(const ComMap& comMap, ComInterfaceClass& _comInterface)
-        : map(comMap)
-        , comInterface(_comInterface)
-    {}
+    ComNavi(ComMap& comMap, WariatDrive<ComInterfaceClass>& WariatDrive)
+        : map(comMap), wariatDrive(WariatDrive)
+    {
+        activeInstance = this;
+    }
 
     ~ComNavi() = default;
 
-    EState state = EState::Start;
-    bool bMoving = false;
-public:
-    void MoveFinished()
-    {
-        bMoving = false;
-    }
-
-    void DriveToDestination(const Transform& transform)
-    {
-        Vector2<float> path = destination - transform.position;
-        const float angle = acosf(path.x / path.Length()) - transform.rotation;
-        comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angle)));
-        state = EState::RotatingToWall;
-        bMoving = true;
-    }
-
     void Update(const Transform& transform)
     {
+        if (bMoving) return;
+
         switch (state)
         {
             case EState::None:
                 break;
             case EState::Start:
                 Start();
-                state = EState::WaitAfterStart;
-                break;
-            case EState::WaitAfterStart:
-                if (!bMoving) state = EState::SearchForWall;
                 break;
             case EState::SearchForWall:
                 SearchForWall(transform);
@@ -65,25 +47,11 @@ public:
             case EState::DriveToWall:
                 DriveToWall(transform);
                 break;
-            case EState::RotatingToWall:
-                if (!bMoving)
-                {
-                    state = EState::MovingToWall;
-                    bMoving = true;
-                    comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
-                }
-                break;
-            case EState::MovingToWall:
-                if (!bMoving) state = EState::DriveAlongWall;
-                break;
             case EState::DriveAlongWall:
                 DriveAlongWall(transform);
                 break;
             case EState::DriveAround:
                 DriveAround(transform);
-                break;
-            case EState::DrivingAround:
-                if (!bMoving) state = EState::SearchForWall;
                 break;
             default:
                 break;
@@ -98,7 +66,7 @@ public:
     void Start()
     {
         bMoving = true;
-        wariat.Rotate(6.29f); // 360 deg
+        wariatDrive.Rotate(6.29f, &ComNavi::OnMoveFinished); // 360 deg
     }
 
     void SearchForWall(const Transform& transform)
@@ -151,62 +119,191 @@ public:
 
     wallFound:
         state = EState::DriveToWall;
-        destination = nearestWall;
+
+        Vector2<float> relativeDestination = nearestWall;
+        relativeDestination.Normalize();
+        relativeDestination *= nearestWall.Length() - toWallDistanceCm;
+
+        destination = (wariatPosOnMap + relativeDestination) * mapCellSizeInCm;
     }
 
     void DriveToWall(const Transform& transform)
     {
-        Vector2<float> path = destination - transform.position;
-        //if (path.LengthSq() < 30 * 30)
-        {
-            const float angle = acosf(path.x / path.Length()) - transform.rotation;
-            comInterface.SendData(WariatCommon::Payload::Rotate(NormalizeAngle(angle)));
-            state = EState::RotatingToWall;
-            bMoving = true;
-        }
+        bMoving = true;
+        wariatDrive.DriveTo(destination, &ComNavi::OnMoveFinished);
     }
 
     void DriveAround(const Transform& transform)
     {
         bMoving = true;
-        comInterface.SendData(WariatCommon::Payload::MoveForward((destination - transform.position).Length()));
-
-        state = EState::DrivingAround;
-        return;
+        wariatDrive.DriveTo(destination, &ComNavi::OnMoveFinished);
     }
+
+    static void OnMoveFinished()
+    {
+        if (activeInstance)
+            activeInstance->MoveFinished();
+    }
+
+    void MoveFinished()
+    {
+        bMoving = false;
+
+        switch (state)
+        {
+            case WariatCommon::EState::None:
+                break;
+            case WariatCommon::EState::Start:
+                state = EState::SearchForWall;
+                break;
+            case WariatCommon::EState::SearchForWall:
+                break;
+            case WariatCommon::EState::DriveToWall:
+                state = EState::DriveAlongWall;
+                break;
+            case WariatCommon::EState::DriveAlongWall:
+                break;
+            case WariatCommon::EState::DriveAround:
+                state = EState::SearchForWall;
+                break;
+            default:
+                break;
+        }
+    }
+
+    //void FindWallAngle
 
     void DriveAlongWall(const Transform& transform)
     {
-        EMapCellState cell = map.GetCellState(transform.position);
+        // AABB ?
 
-        // AABB
+        float aheadDistSq = FLT_MAX, rightDistSq = FLT_MAX;
+        Vector2<int32> aheadPos, rightPos;
 
         // Detection forward
-        const float sinA = sin(transform.rotation);
-        const float cosA = cos(transform.rotation);
+        const float sinA = sinf(transform.rotation);
+        const float cosA = cosf(transform.rotation);
+        const float oneDivCosA = 1 / cosA;
+        const float tanA = sinA * oneDivCosA;
 
         const float wariatWidth = 1.5; //* 5 cm
-        const float wDivCosA = wariatWidth / cosA;
 
-        for (int32_t y = 0; y < 10; ++y)
+        const bool bTopHalf = transform.rotation > 0;
+        const bool bRightHalf = transform.rotation < M_PI_2 && transform.rotation > -M_PI_2;
+
+        int32_t mapCellSizeInCm = map.GetCellSizeInCm();
+        Vector2<int32_t> wariatPosOnMap(transform.position / mapCellSizeInCm);
+        Vector2<int32_t> checkedCell;
+        const int32_t searchRange = 400 / mapCellSizeInCm;
+
+        map.lastScannedAhead.clear();
+        map.lastScannedRight.clear();
+
+        for (checkedCell.y = -searchRange; checkedCell.y < searchRange; ++checkedCell.y)
         {
-            for (int32_t x = 0; x < 10; ++x)
+            for (checkedCell.x = -searchRange; checkedCell.x < searchRange; ++checkedCell.x)
             {
+                EMapCellState cell = map.GetCellState(wariatPosOnMap + checkedCell);
+                //if (cell != EMapCellState::Wall) // TODO uncomment after debug
+                //{
+                //    continue;
+                //}
+
+                //
+                //  TODO Idk why byt most of this equations had to be reversed to the equations from desmos (> instead of <) in order to work
+                //
+
                 // is ahead of wariat
-                if (y > -x * cosA / sinA)
-                    continue;
-                // is 
+                if (bTopHalf ? (checkedCell.y > -checkedCell.x * cosA / sinA) : (checkedCell.y < -checkedCell.x * cosA / sinA))
+                {
+                    // is the width of the wariat ahead
+                    if (/*bRightHalf ? */(cosA * checkedCell.y > sinA * checkedCell.x - wariatWidth) && (cosA * checkedCell.y < sinA * checkedCell.x + wariatWidth))
+                                   //: (cosA * checkedCell.y < sinA * checkedCell.x - wariatWidth) && (cosA * checkedCell.y > sinA * checkedCell.x + wariatWidth))
+                    {
+                        map.lastScannedAhead.push_back(checkedCell + wariatPosOnMap); // TODO remove debug
+                        if (cell != EMapCellState::Wall) // TODO remove debug
+                        {
+                            continue;
+                        }
+                        // the cell is ahead in the width of the wariat
+                        const float cellDistSq = checkedCell.LengthSq();
+                        if (cellDistSq < aheadDistSq)
+                        {
+                            aheadDistSq = cellDistSq;
+                            aheadPos = checkedCell;
+                        }
+                    }
+                }
+                // in on the right
+                else if (bRightHalf ? (checkedCell.y > tanA * checkedCell.x) : (checkedCell.y < tanA * checkedCell.x))
+                {
+                    // is in the width ot the wariat on the side
+                    if (/*bTopHalf ? */(checkedCell.y * sinA < -cosA * checkedCell.x - wariatWidth) && (checkedCell.y * sinA > -cosA * checkedCell.x - 2 * wariatWidth))
+                               //  : (checkedCell.y * sinA > -cosA * checkedCell.x - wariatWidth) && (checkedCell.y * sinA < -cosA * checkedCell.x - 2 * wariatWidth))
+                    {
+                        /////////////////////////////////////////////////////// Cos jest zle z tym wykrywaniem
+                        map.lastScannedRight.push_back(checkedCell + wariatPosOnMap); // TODO remove debug
+                        if (cell != EMapCellState::Wall)// TODO remove debug
+                        {
+                            continue;
+                        }
+                        // the cell is one the right in the width of wariat
+                        const float cellDistSq = checkedCell.LengthSq();
+                        if (cellDistSq < rightDistSq)
+                        {
+                            rightDistSq = cellDistSq;
+                            rightPos = checkedCell;
+                        }
+                    }
+                }
             }
         }
+        float aheadDist = sqrt(aheadDistSq);
+        float rightDist = sqrt(rightDistSq);
 
-        // Detection right
-        const float wDivSinA = wariatWidth / sinA;
+        float rightDistRel = fabsf(rightDist - toWallDistanceCm);
+
+        // TODO Idk why but it turns in the wrong direction (angle < 0 should be right, but is left)
+
+        if (aheadDist < toWallDistanceCm)
+        {
+            // turn left
+            wariatDrive.Rotate(-M_PI/9, &ComNavi::OnMoveFinished);
+            //wariatDrive.RotateAndDrive(M_PI / 9, 5, &ComNavi::OnMoveFinished);
+        }
+        else if (rightDist > 142133)
+        {
+            wariatDrive.RotateAndDrive(M_PI / 9, 15, &ComNavi::OnMoveFinished);
+        }
+        else if (rightDistRel < 10 || rightDistRel > 5)
+        {
+            // turn right
+            if (rightDist < toWallDistanceCm)
+                wariatDrive.RotateAndDrive(-M_PI / 9, 15, &ComNavi::OnMoveFinished);
+            else
+                wariatDrive.RotateAndDrive(M_PI / 9, 15, &ComNavi::OnMoveFinished);
+
+            //wariatDrive.Rotate(-M_PI/9, &ComNavi::OnMoveFinished);
+        }
+        else
+        {
+            // drive forward
+            wariatDrive.MoveForward(15, &ComNavi::OnMoveFinished);
+        }
+        bMoving = true;
     }
 
 //protected:
-    const ComMap& map;
-    ComInterfaceClass& comInterface;
-
+    ComMap& map;
+    WariatDrive<ComInterfaceClass>& wariatDrive;
 
     Vector2<float> destination;
+
+    EState state = EState::Start;
+    bool bMoving = false;
+    int32_t toWallDistanceCm = 35;
+
+    inline static ComNavi<ComInterfaceClass>* activeInstance = nullptr;
 };
+
+}

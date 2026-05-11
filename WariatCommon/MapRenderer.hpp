@@ -14,7 +14,9 @@ enum class CellColor : uint8_t
     Wall,
     Idk,
     VisionCone,
-    Wariat
+    Wariat,
+    ScanAhead, // debug
+    ScanRight, // debug
 };
 
 static constexpr CellColor MapCellStateToCellColor(EMapCellState mapCellState)
@@ -93,6 +95,20 @@ public:
             int32_t CellX = Cell - CellY * mapWidthInCells;
             int32_t TexturePixelIndex = (CellY + renderedMapHalfSize.y) * renderedMapSize.x + CellX + renderedMapHalfSize.x;
             SetRenderedMapCell(TexturePixelIndex, CellColor::VisionCone);
+        }
+
+        for (Vector2<int32_t> cell : map.lastScannedAhead)
+        {
+            cell -= WariatPosOnMap;
+            int32_t TexturePixelIndex = (cell.y + renderedMapHalfSize.y) * renderedMapSize.x + cell.x + renderedMapHalfSize.x;
+            SetRenderedMapCell(TexturePixelIndex, CellColor::ScanAhead);
+        }
+
+        for (Vector2<int32_t> cell : map.lastScannedRight)
+        {
+            cell -= WariatPosOnMap;
+            int32_t TexturePixelIndex = (cell.y + renderedMapHalfSize.y) * renderedMapSize.x + cell.x + renderedMapHalfSize.x;
+            SetRenderedMapCell(TexturePixelIndex, CellColor::ScanRight);
         }
     }
 };

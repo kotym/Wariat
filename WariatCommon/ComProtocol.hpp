@@ -69,6 +69,15 @@ namespace Payload
         int16_t distance = -1;
     };
     
+    struct OdometryReading : public Payload
+    {
+        OdometryReading(float move, float rotation) : movedBy(move), rotatedBy(rotation) {}
+        PacketPayloadType GetPayloadType() { return PacketPayloadType::OdometryReading; }
+
+        float movedBy = 0.f;
+        float rotatedBy = 0.f;
+    };
+    
     struct MoveForward : public Payload
     {
         MoveForward(float _distanceCm) : distanceCm(_distanceCm) {}
@@ -123,6 +132,8 @@ inline uint8_t GetPayloadSize(PacketPayloadType type)
         return sizeof(Payload::Stop);
     case PacketPayloadType::HcSr04Reading:
         return sizeof(Payload::HcSr04Reading);
+    case PacketPayloadType::OdometryReading:
+        return sizeof(Payload::OdometryReading);
     case PacketPayloadType::MoveForward:
         return sizeof(Payload::MoveForward);
     case PacketPayloadType::Rotate:

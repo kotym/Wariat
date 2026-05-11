@@ -92,34 +92,52 @@ void AUEWariat::Tick(float DeltaTime)
 	CheckHC_SR04();
 	UpdateKinematic(DeltaTime);
 
-	FVector2D pos(FVector2D(GetActorLocation()) - ZeroLocation);
-	pureWariat.transform.position = { (float)pos.X, (float)pos.Y };
-	pureWariat.transform.rotation = FMath::DegreesToRadians(GetActorRotation().Yaw - ZeroRotation);
+	//FVector2D pos(FVector2D(GetActorLocation()) - ZeroLocation);
+	//pureWariat.transform.position = { (float)pos.X, (float)pos.Y };
+	//pureWariat.transform.rotation = FMath::DegreesToRadians(GetActorRotation().Yaw - ZeroRotation);
 	pureWariat.Update();
 
-	static EState LastState = EState::None;
+	static WariatCommon::EState LastState = WariatCommon::EState::None;
 	if (LastState != pureWariat.navi.state)
 	{
 		LastState = pureWariat.navi.state;
 		FString text;
 		switch (pureWariat.navi.state)
 		{
-			case EState::None: text = TEXT("None"); break;
-			case EState::Start: text = TEXT("Start"); break;
-			case EState::WaitAfterStart: text = TEXT("WaitAfterStart"); break;
-			case EState::SearchForWall: text = TEXT("SearchForWall"); break;
-			case EState::DriveToWall: text = TEXT("DriveToWall"); break;
-			case EState::RotatingToWall: text = TEXT("RotatingToWall"); break;
-			case EState::MovingToWall: text = TEXT("MovingToWall"); break;
-			case EState::DriveAlongWall: text = TEXT("DriveAlongWall"); break;
-			case EState::DriveAround: text = TEXT("DriveAround"); break;
-			case EState::DrivingAround: text = TEXT("DrivingAround"); break;
+			case WariatCommon::EState::None: text = TEXT("None"); break;
+			case WariatCommon::EState::Start: text = TEXT("Start"); break;
+			case WariatCommon::EState::SearchForWall: text = TEXT("SearchForWall"); break;
+			case WariatCommon::EState::DriveToWall: text = TEXT("DriveToWall"); break;
+			case WariatCommon::EState::DriveAlongWall: text = TEXT("DriveAlongWall"); break;
+			case WariatCommon::EState::DriveAround: text = TEXT("DriveAround"); break;
 		}
 
 		GEngine->AddOnScreenDebugMessage(-1, 60, FColor::Red, text);
 	}
+
+	FString text;
+	switch (pureWariat.driveState)
+	{
+		case WariatCommon::EDriveState::None: text = TEXT("None"); break;
+		case WariatCommon::EDriveState::DriveTo: text = TEXT("DriveTo"); break;
+		case WariatCommon::EDriveState::LookAt: text = TEXT("LookAt"); break;
+		case WariatCommon::EDriveState::Rotate: text = TEXT("Rotate"); break;
+		case WariatCommon::EDriveState::MoveForward: text = TEXT("MoveForward"); break;
+		case WariatCommon::EDriveState::RotateAndDrive: text = TEXT("RotateAndDrive"); break;
+		default:
+			break;
+	}
+	GEngine->AddOnScreenDebugMessage(12344321, 60, pureWariat.bDriving? FColor::Green : FColor::Emerald, FString::Printf(TEXT("DriveState: %s"), *text));
+
+
 	GEngine->AddOnScreenDebugMessage(200000000, 60, FColor::Green, FString::Printf(TEXT("transform: x: %f y: %f r: %f"), pureWariat.transform.position.x, pureWariat.transform.position.y, pureWariat.transform.rotation));
 	GEngine->AddOnScreenDebugMessage(100000000, 60, FColor::Orange, FString::Printf(TEXT("destination: x: %f y: %f "), pureWariat.navi.destination.x, pureWariat.navi.destination.y));
+	FVector destination(pureWariat.navi.destination.x, pureWariat.navi.destination.y, 0);
+	FRotator rot(0, ZeroRotation, 0);
+	FVector destination0 = rot.RotateVector(destination);
+	destination0.X += ZeroLocation.X;
+	destination0.Y += ZeroLocation.Y;
+	DrawDebugSphere(GetWorld(), destination0, 10, 10, FColor::Purple, false, 10, 0, 2);
 }
 
 // Called to bind functionality to input
@@ -166,7 +184,7 @@ void AUEWariat::ResetWariat()
 {
 	pureWariat.map.Reset();
 	ZeroLocation = FVector2D(GetActorLocation());
-	ZeroRotation = 0;// GetActorRotation().Yaw;
+	ZeroRotation = GetActorRotation().Yaw;
 	int i = 0;
 	for (UHC_SR04* HC_SR04 : HC_SR04s)
 	{
@@ -195,7 +213,7 @@ void AUEWariat::MoveForward(float DistanceCm, float SpeedCmPerSec, bool bFinishC
 {
 	bcallbackOnMoveFinished = bFinishCallback;
 	StopKinematic();
-	bDrivingDistance = !FMath::IsNearlyZero(DistanceCm);
+	bDrivingDistance = true;//!FMath::IsNearlyZero(DistanceCm);
 	RemainingDistance = DistanceCm;
 	CommandSpeed = FMath::Abs(SpeedCmPerSec) > 0.0f ? FMath::Abs(SpeedCmPerSec) : MaxSpeedCmPerSec;
 }
@@ -213,7 +231,7 @@ void AUEWariat::Rotate(float Angle, float TurnRateDegPerSec, bool bFinishCallbac
 	bcallbackOnMoveFinished = bFinishCallback;
 	StopKinematic();
 	Angle = FMath::RadiansToDegrees(Angle);
-	bTurning = !FMath::IsNearlyZero(Angle);
+	bTurning = true;//!FMath::IsNearlyZero(Angle);
 	RemainingYaw = Angle;
 	CommandTurnRate = FMath::Abs(TurnRateDegPerSec) > 0.0f ? FMath::Abs(TurnRateDegPerSec) : MaxTurnRateDegPerSec;
 }
@@ -268,10 +286,10 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 			if (bcallbackOnMoveFinished) SendEvent(WariatCommon::Payload::RotationFinished());
 		}
 	}
-	else if (!FMath::IsNearlyZero(CommandSpeed))
-	{
-		ForwardSpeed = CommandSpeed;
-	}
+	//else if (!FMath::IsNearlyZero(CommandSpeed))
+	//{
+	//	ForwardSpeed = CommandSpeed;
+	//}
 	//else
 	//if (FMath::IsNearlyZero(ForwardSpeed) && FMath::IsNearlyZero(TurnRate))
 	//{
@@ -279,11 +297,14 @@ void AUEWariat::UpdateKinematic(float DeltaTime)
 	//}
 
 	FRotator NewRotation = GetActorRotation();
-	NewRotation.Yaw += TurnRate * DeltaTime;
+	float RotDelta = TurnRate * DeltaTime;
+	NewRotation.Yaw += RotDelta;
 	SetActorRotation(NewRotation);
 
 	FVector Forward = NewRotation.Vector();
 	FVector Delta = Forward * ForwardSpeed * DeltaTime;
 	AddActorWorldOffset(Delta, true);
+	
+	SendEvent(WariatCommon::Payload::OdometryReading(ForwardSpeed > 0 ? Delta.Length() : -Delta.Length(), FMath::DegreesToRadians(RotDelta)));
 }
 

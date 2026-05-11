@@ -136,6 +136,8 @@ void UWariatUI::FillTexture(FLinearColor Color)
 void UWariatUI::SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor cellColor)
 {
 	static const FLinearColor Pink(1.f, 0.f, 0.5f, 1.f);
+	static const FLinearColor Ahead(1.f, 0.f, 1.f, 1.f);
+	static const FLinearColor Right(0.5f, 0.8f, 0.5f, 1.f);
 	const FLinearColor* Color = nullptr;
 	switch (cellColor)
 	{
@@ -156,6 +158,12 @@ void UWariatUI::SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor c
 			break;
 		case WariatCommon::CellColor::VisionCone:
 			Color = &CellColorScanOutline;
+			break;
+		case WariatCommon::CellColor::ScanAhead:
+			Color = &Ahead;
+			break;
+		case WariatCommon::CellColor::ScanRight:
+			Color = &Right;
 			break;
 		default:
 			Color = &Pink;
