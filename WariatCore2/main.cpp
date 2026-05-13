@@ -13,8 +13,8 @@ void hMain()
     //esp.init();
 	sys.setLogDev(&Serial);
     Serial.printf("IstartI0 ");
-    //Motors::Init();
     COREInterface::Init(hExt.serial);
+    Motors::Init();
     sys.taskCreate([](){ COREInterface::Get().ReceiveCommands(); });
 
     

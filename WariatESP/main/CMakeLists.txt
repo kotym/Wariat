@@ -8,3 +8,5 @@ idf_component_register(
         "."
         "../../WariatCommon"
 )
+
+target_compile_definitions(${COMPONENT_LIB} PRIVATE WARIAT_CODE_ESP)

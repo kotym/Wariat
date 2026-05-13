@@ -18,7 +18,7 @@ public:
                     WariatCommon::Payload::HcSr04Reading readingPayload(id, distance);
                     COREInterface::Get().SendEvent(readingPayload);
                     Serial.printf(" send HCSR04: %d \n", distance);
-                    sys.delay_ms(50);
+                    sys.delay_ms(100);
                 } 
             });
     }

@@ -47,8 +47,8 @@ public:
 	bool bDriving = false;
 	DriveCallback driveCallback = nullptr;
 
-	float lastRotation = 0;
-	float lastMove = 0;
+	//float lastRotation = 0;
+	//float lastMove = 0;
 
 	bool DriveTo(const Vector2<float>& destination, DriveCallback callback = nullptr)
 	{
@@ -111,9 +111,9 @@ public:
 	void MoveFinished()
 	{
 		// Update position
-		Vector2<float> forwardVector(cosf(transform.rotation), sinf(transform.rotation));
+		//Vector2<float> forwardVector(cosf(transform.rotation), sinf(transform.rotation));
 		//transform.position += forwardVector * lastMove;
-		lastMove = 0;
+		//lastMove = 0;
 		bDriving = false;
 		driveState = EDriveState::None;
 		if (driveCallback) driveCallback();
@@ -123,7 +123,7 @@ public:
 	{
 		// Update rotation
 		//transform.rotation = NormalizeAngle(transform.rotation + lastRotation);
-		lastRotation = 0;
+		//lastRotation = 0;
 
 		switch (driveState)
 		{
@@ -153,8 +153,8 @@ public:
 		bDriving = false;
 		driveCallback = nullptr;
 		// TODO In order to don't get lost update position from odometry or reset everything on stop
-		lastRotation = 0;
-		lastMove = 0;
+		//lastRotation = 0;
+		//lastMove = 0;
 	}
 
 	void ResetDrive()
@@ -164,8 +164,8 @@ public:
 		target = 0;
 		bDriving = false;
 		driveCallback = nullptr;
-		lastRotation = 0;
-		lastMove = 0;
+		//lastRotation = 0;
+		//lastMove = 0;
 	}
 
 	void OdometryUpdate(const Payload::OdometryReading& odometryReading)
@@ -197,7 +197,7 @@ private:
 			RotationFinished();
 			return;
 		}
-		lastRotation = angleRad;
+		//lastRotation = angleRad;
 		comInterface->SendData(WariatCommon::Payload::Rotate(angleRad));
 	}
 
@@ -210,7 +210,7 @@ private:
 			MoveFinished();
 			return;
 		}
-		lastMove = distanceCm;
+		//lastMove = distanceCm;
 		comInterface->SendData(WariatCommon::Payload::MoveForward(distanceCm));
 	}
 

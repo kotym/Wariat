@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-set(HFRAMEWORK_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.1.1/HusarionCore2Tools-v1.1.1/hFramework")
-set(HSENSORS_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.1.1/HusarionCore2Tools-v1.1.1/hSensors")
-set(HMODULES_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.1.1/HusarionCore2Tools-v1.1.1/hModules")
+set(HFRAMEWORK_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.2.0/HusarionCore2Tools-v1.2.0/hFramework")
+set(HSENSORS_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.2.0/HusarionCore2Tools-v1.2.0/hSensors")
+set(HMODULES_PATH "D:/HusarionCore2Tools/dist/HusarionCore2Tools-v1.2.0/HusarionCore2Tools-v1.2.0/hModules")
 project(WariatCore2 NONE)
 
 set(CMAKE_CXX_STANDARD 20)

@@ -108,7 +108,7 @@ public:
                 }
             }
             
-            sys.delay_ms(50); // TODO czy to potrzebne?
+            sys.delay(50); // TODO czy to potrzebne?
         }
     }
 

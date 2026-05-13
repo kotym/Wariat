@@ -2,8 +2,11 @@
 
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cfloat>
 #include <cstdint>
+#ifdef WARIAT_CODE_UE5
 #include <corecrt_math_defines.h>
+#endif
 
 namespace WariatMath
 {
@@ -135,29 +138,27 @@ public:
         return x == val && y == val;
     }
 
-    //template<class T>
-    inline void/*Vector2<T>&*/ Normalize()
+    inline Vector2<T>& Normalize()
     {
         const float length = Length();
         x /= length;
         y /= length;
-        //return *this;
+        return *this;
     }
 
-    template<class T>
     inline Vector2<T> GetNormalized() const
     {
         const float length = Length();
         return Vector2<T>(x/length, y/length);
     }
 
-    template<class T>
+    //template<class T>
     inline static float Dot(Vector2<T> a, Vector2<T> b)
     {
         return a.x * b.x + a.y * b.y;
     }
 
-    template<class T>
+    //template<class T>
     inline static float Angle(Vector2<T> a, Vector2<T> b)
     {
         return acosf(Dot(a.Normalize(), b.Normalize()));

@@ -178,7 +178,7 @@ public:
         // AABB ?
 
         float aheadDistSq = FLT_MAX, rightDistSq = FLT_MAX;
-        Vector2<int32> aheadPos, rightPos;
+        Vector2<int32_t> aheadPos, rightPos;
 
         // Detection forward
         const float sinA = sinf(transform.rotation);

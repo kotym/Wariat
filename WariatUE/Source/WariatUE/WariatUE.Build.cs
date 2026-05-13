@@ -34,6 +34,8 @@ public class WariatUE : ModuleRules
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
+		
+		PrivateDefinitions.Add("WARIAT_CODE_UE5=1");
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

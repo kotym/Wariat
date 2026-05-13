@@ -7,6 +7,13 @@ class Motors
     ~Motors();
 
 public:
+   enum class EState : uint8_t
+    {
+        None,
+        Moving,
+        Rotating,
+    } state = EState::None;
+
     void static Init() {
         motors = new Motors();
     }
@@ -15,6 +22,7 @@ public:
     void MoveForward(float distanceCm);
     void Rotate(float angleRad);
     void Stop();
+    void ReadOdometry();
 
 private:
     float encoderClicksPerFullRotation = 720;
