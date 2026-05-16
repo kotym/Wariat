@@ -46,15 +46,32 @@ Motors::Motors()
                     break;
                 case 'm':
                     rotSpeed += M_PI / 6;
+                    Serial.printf("Rot speed: %f", rotSpeed);
                     break;
                 case 'n':
                     rotSpeed -= M_PI / 6;
+                    Serial.printf("Rot speed: %f", rotSpeed);
                     break;
                 case 'j':
                     speed -= 2;
+                    Serial.printf("speed: %f", speed);
                     break;
                 case 'k':
                     speed += 2;
+                    Serial.printf("speed: %f", speed);
+                    break;
+                case 'c':
+                    hMot1.rotRel(encoderClicksPerFullRotation, 300);
+                    hMot2.rotRel(encoderClicksPerFullRotation, 300);
+                    Serial.printf("speed: %f", speed);
+                    break;
+                case 'x':
+                    ++encoderClicksPerFullRotation;
+                    Serial.printf("encoderClicksPerFullRotation: %f", encoderClicksPerFullRotation);
+                    break;
+                case 'z':
+                    --encoderClicksPerFullRotation;
+                    Serial.printf("encoderClicksPerFullRotation: %f", encoderClicksPerFullRotation);
                     break;
                 default:
                     break;
@@ -74,9 +91,9 @@ void Motors::MoveForward(float distanceCm)
     if (state != EState::None) return;
 
     const float rotations = distanceCm / wheelCircumferenceCm;
-    const int32_t encoderClicks = rotations * encoderClicksPerFullRotation;
-    hMot1.rotRel(encoderClicks, 300);
-    hMot2.rotRel(encoderClicks, 300);
+    const int32_t encoderClicks = -rotations * encoderClicksPerFullRotation; // withuout minus it drives backwards
+    hMot1.rotRel(encoderClicks, power);
+    hMot2.rotRel(encoderClicks, power);
     state = EState::Moving;
     sys.taskCreate([&](){
         hMot1.waitDone(); 
@@ -92,10 +109,10 @@ void Motors::Rotate(float angleRad)
 {
     if (state != EState::None) return;
 
-    const float wheelDistanceToTravel = M_PI * angleRad;
-    const int32_t encoderClicks = wheelDistanceToTravel / wheelCircumferenceCm * encoderClicksPerFullRotation;
-    hMot1.rotRel(-encoderClicks, 300);
-    hMot2.rotRel(encoderClicks, 300);
+    const float wheelDistanceToTravel = angleRad * M_1_PI;
+    const int32_t encoderClicks = wheelDistanceToTravel * encoderClicksPerFullRotation;
+    hMot1.rotRel(-encoderClicks, power);
+    hMot2.rotRel(encoderClicks, power);
     state = EState::Rotating;
         sys.taskCreate([&](){
         hMot1.waitDone(); 
@@ -124,7 +141,7 @@ void Motors::ReadOdometry()
     {
         const int32_t encoderCnt1 = hMot1.getEncoderCnt();
         const int32_t encoderCnt2 = hMot2.getEncoderCnt();
-        float dist = ((encoder1 - encoderCnt1) + (encoder2 - encoderCnt2)) * 0.5f / encoderClicksPerFullRotation * wheelCircumferenceCm;
+        float dist = ((encoderCnt1 - encoder1) + (encoderCnt2 - encoder2)) * 0.5f / encoderClicksPerFullRotation * wheelCircumferenceCm;
         COREInterface::Get().SendEvent(WariatCommon::Payload::OdometryReading(dist, 0));
         Serial.printf("Odo: dist: %f\n", dist);
 
@@ -136,7 +153,7 @@ void Motors::ReadOdometry()
     {
         const int32_t encoderCnt1 = hMot1.getEncoderCnt();
         const int32_t encoderCnt2 = hMot2.getEncoderCnt();
-        float angle = (encoder2 - encoderCnt2 - (encoder1 - encoderCnt1)) * 0.5f / encoderClicksPerFullRotation * wheelCircumferenceCm / M_PI;
+        float angle = (encoderCnt2 - encoder2 - (encoderCnt1 - encoder1)) * 0.5f / encoderClicksPerFullRotation * M_TWOPI;
         COREInterface::Get().SendEvent(WariatCommon::Payload::OdometryReading(0, angle));
         Serial.printf("Odo: rot: %f\n", angle);
         encoder1 = encoderCnt1;

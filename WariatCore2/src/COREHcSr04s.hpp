@@ -15,9 +15,10 @@ public:
                 {
                     int8_t id = ++lastRead % 4;
                     int16_t distance = hcSr04s[id].getDistance();
+                    //Serial.printf(" HCSR04: id: %d dist: %d \n", id, distance);
+                    if (distance <= 0) continue;
                     WariatCommon::Payload::HcSr04Reading readingPayload(id, distance);
                     COREInterface::Get().SendEvent(readingPayload);
-                    Serial.printf(" send HCSR04: %d \n", distance);
                     sys.delay_ms(100);
                 } 
             });

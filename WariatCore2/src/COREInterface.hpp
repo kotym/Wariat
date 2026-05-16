@@ -42,7 +42,7 @@ public:
             // TODO Czy to czeka blokujac??
             if (uart.waitForData(1))
             {
-                Serial.printf("receiving state: %d\n", state);
+                Serial.printf("UART: receiving state: %d\n", state);
                 switch (state)
                 {
                 case 0:
@@ -50,7 +50,7 @@ public:
                     {
                         uint8_t start = 0;
                         uart.read(&start, 1, INFINITE);
-                        Serial.printf("start: %d\n", start);
+                        Serial.printf("UART: start: %d\n", start);
                         if(start != 0xAA)
                         {
                             readingError();
@@ -63,14 +63,14 @@ public:
                     if (uart.available() >= 1)
                     {
                         uart.read((void*)&payloadType, 1, INFINITE);
-                        Serial.printf("payloadType: %d\n", payloadType);
+                        Serial.printf("UART: payloadType: %d\n", payloadType);
                         state = 2;
                     }
                     break;
                 case 2:
                 {
                     payloadSize = WariatCommon::GetPayloadSize(payloadType);
-                    Serial.printf("payloadSize: %d\n", payloadSize);
+                    Serial.printf("UART: payloadSize: %d\n", payloadSize);
                     if (payloadSize == 0) {
                         state = 3;
                         break;
@@ -90,13 +90,13 @@ public:
                             uint8_t end;
                         } data;
                         uart.read(&data, sizeof(data), INFINITE);
-                        Serial.printf("data: %d %d\n", data.checkSum, data.end);
+                        Serial.printf("UART: data: %d %d\n", data.checkSum, data.end);
                         if (data.end != 0xFA) {
                             readingError();
                             break;
                         } 
                         uint8_t checkSum = WariatCommon::CalcCheckSum(payloadType, payload, payloadSize);
-                        Serial.printf("checkSum: %d\n", checkSum);
+                        Serial.printf("UART: checkSum: %d\n", checkSum);
                         if (checkSum != data.checkSum) {
                             readingError();
                             break;
@@ -105,6 +105,7 @@ public:
                         // process payload
                         ProcessCommand(payloadType, payload);
                     }
+                    state = 0;
                 }
             }
             
@@ -114,7 +115,7 @@ public:
 
     void ProcessCommand(WariatCommon::PacketPayloadType payloadType, void* payload)
     {
-        Serial.printf("processing command: Type: %d", (int)payloadType);
+        Serial.printf("UART: processing command: Type: %d", (int)payloadType);
         switch (payloadType)
         {
         case WariatCommon::PacketPayloadType::Stop:

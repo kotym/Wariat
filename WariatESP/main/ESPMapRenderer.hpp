@@ -3,6 +3,7 @@
 
 class ESPMapRenderer : public WariatCommon::MapRenderer<ESPMapRenderer>
 {
+public:
     void SetRenderedMapCell(uint32_t cellIndex, WariatCommon::CellColor cellColor)
     {
         // TODO integrate with website

@@ -29,6 +29,7 @@ static constexpr CellColor MapCellStateToCellColor(EMapCellState mapCellState)
         case EMapCellState::Idk: return CellColor::Idk;
         case EMapCellState::Invalid: return CellColor::None;
     }
+    return CellColor::None;
 }
 
 template<class Derived>

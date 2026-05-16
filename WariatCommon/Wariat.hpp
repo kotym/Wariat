@@ -125,7 +125,7 @@ public:
 
 	void ProcessHcSr04Reading(Payload::HcSr04Reading& hcSr04Reading)
 	{
-		printf("hcSr04ReadingProcessing: id: %d, distance: %d", (int)hcSr04Reading.id, hcSr04Reading.distance);
+		//printf("hcSr04ReadingProcessing: id: %d, distance: %d\n", (int)hcSr04Reading.id, hcSr04Reading.distance);
 		if (hcSr04Reading.id == 0) 
 			map.ResetOutline();
 		Transform sensorTransform;

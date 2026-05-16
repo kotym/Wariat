@@ -33,6 +33,16 @@ public:
     void Update(const Transform& transform)
     {
         if (bMoving) return;
+        switch (state)
+		{
+			case WariatCommon::EState::None: printf("navi state: None\n"); break;
+			case WariatCommon::EState::Start: printf("navi state: Start\n"); break;
+			case WariatCommon::EState::SearchForWall: printf("navi state: SearchForWall\n"); break;
+			case WariatCommon::EState::DriveToWall: printf("navi state: DriveToWall\n"); break;
+			case WariatCommon::EState::DriveAlongWall: printf("navi state: DriveAlongWall\n"); break;
+			case WariatCommon::EState::DriveAround: printf("navi state: DriveAround\n"); break;
+			default: printf("navi state: undefined: %d\n", (int)state); break;
+		}
 
         switch (state)
         {
@@ -148,7 +158,7 @@ public:
     void MoveFinished()
     {
         bMoving = false;
-
+        printf("navi move finished\n");
         switch (state)
         {
             case WariatCommon::EState::None:

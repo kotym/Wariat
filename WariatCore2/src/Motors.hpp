@@ -1,5 +1,6 @@
 #pragma once
 #include "ComProtocol.hpp"
+#include "ComMath.hpp"
 
 class Motors
 {
@@ -26,10 +27,10 @@ public:
 
 private:
     float encoderClicksPerFullRotation = 720;
-    float wheelDiameterCm = 5.6; //cm
-    float wheelCircumferenceCm = 17.6; //cm
-    float wheelbaseCm = 10;
-
+    //float wheelDiameterCm = 5.6; //cm
+    float wheelCircumferenceCm = 8.3f * M_PI; //cm
+    //float wheelbaseCm = 13.3f;
+    int16_t power = 500;
     static Motors* motors;
 };
 

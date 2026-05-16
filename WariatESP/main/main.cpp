@@ -12,6 +12,15 @@ static constexpr gpio_num_t kBuiltInLed = GPIO_NUM_2;
 
 WariatESP wariat;
 
+void WariatUpdate(void* data)
+{
+    while(true)
+    {
+        wariat.Update();
+        vTaskDelay(pdMS_TO_TICKS(16));
+    }
+}
+
 extern "C" void app_main(void)
 {
     printf("start0\n");
@@ -20,17 +29,19 @@ extern "C" void app_main(void)
     gpio_reset_pin(kBuiltInLed);
     gpio_set_direction(kBuiltInLed, GPIO_MODE_OUTPUT);
 
+    xTaskCreate(WariatUpdate, "WariatUpdate", 4080, nullptr, 1, nullptr);
+
     bool ledState = false;
     while(true)
     {
-        WariatCommon::Payload::BlinkToggle blink;
-        printf("loop\n");
-        wariat.SendData(blink);
+        //WariatCommon::Payload::BlinkToggle blink;
+        printf("  .  ");
+        //wariat.SendData(blink);
 
         ledState = !ledState;
         gpio_set_level(kBuiltInLed, ledState);
         
-        vTaskDelay(pdMS_TO_TICKS(300));
+        vTaskDelay(pdMS_TO_TICKS(5000));
         
         
 
